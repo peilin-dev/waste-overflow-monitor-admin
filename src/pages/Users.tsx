@@ -17,15 +17,15 @@ export default function Users() {
   const [form] = Form.useForm()
 
   const load = async () => {
-    setLoading(true)
-    try {
-      const params = roleFilter !== 'all' ? { role: roleFilter } : {}
-      const res = await getUsers(params)
-      setUsers(res.data)
-    } finally {
-      setLoading(false)
-    }
+  setLoading(true)
+  try {
+    const params = roleFilter !== 'all' ? { role: roleFilter } : {}
+    const res = await getUsers(params)
+    setUsers(res.data)
+  } finally {
+    setLoading(false)
   }
+}
 
   useEffect(() => { load() }, [roleFilter])
 
@@ -145,8 +145,8 @@ export default function Users() {
                 </td>
                 <td style={{ padding: '11px 16px', borderBottom: '1px solid #ededed' }}>
                   <span style={{ display: 'flex', gap: 12, fontSize: 11.5 }}>
-                    <a onClick={() => handleToggleStatus(user)} style={{ color: '#4a90d9', cursor: 'pointer', fontWeight: 500 }}>
-                      {user.status === 'active' ? 'Deactivate' : 'Activate'}
+                    <a onClick={() => handleToggleStatus(user)} style={{ color: user.status === 'active' ? '#d9534f' : '#5ca85c', cursor: 'pointer', fontWeight: 500 }}>
+                    {user.status === 'active' ? 'Deactivate' : 'Restore'}
                     </a>
                     <a onClick={() => setResetModal(user)} style={{ color: '#e89c3b', cursor: 'pointer', fontWeight: 500 }}>Reset Pwd</a>
                     <Popconfirm title="Delete this user?" onConfirm={() => handleDelete(user.id)} okText="Yes" cancelText="No">

@@ -69,7 +69,7 @@ export const resetPassword = (id: number, new_password: string) =>
 // Cleaners
 export const getCleanerBlocks = (id: number) => http.get<Block[]>(`/cleaners/${id}/blocks`)
 export const assignBlock = (id: number, block_id: number) =>
-  http.post(`/cleaners/${id}/blocks`, { block_id })
+  http.post(`/cleaners/${id}/blocks`, { block_ids: [block_id] })
 export const removeBlock = (id: number, block_id: number) =>
   http.delete(`/cleaners/${id}/blocks/${block_id}`)
 
