@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { message, Popconfirm } from 'antd'
+import { useCallback, useEffect, useState } from 'react'
+import { message } from 'antd'
 import type { User, Block } from '@/types'
 import { getUsers, getBlocks, getCleanerBlocks, assignBlock, removeBlock } from '@/api'
 
@@ -7,10 +7,9 @@ export default function Cleaners() {
   const [cleaners, setCleaners] = useState<User[]>([])
   const [blocks, setBlocks] = useState<Block[]>([])
   const [assignments, setAssignments] = useState<Record<number, number[]>>({})
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
 
-  const load = async () => {
-    setLoading(true)
+  const load = useCallback(async () => {
     try {
       const [usersRes, blocksRes] = await Promise.all([
         getUsers({ role: 'cleaner' }),
@@ -31,9 +30,9 @@ export default function Cleaners() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { void load() }, [load])
 
   const toggleBlock = async (cleaner: User, blockId: number) => {
     const current = assignments[cleaner.id] || []
@@ -48,7 +47,9 @@ export default function Cleaners() {
       }
       const res = await getCleanerBlocks(cleaner.id)
       setAssignments(prev => ({ ...prev, [cleaner.id]: res.data.map((b: Block) => b.id) }))
-    } catch {}
+    } catch {
+      // ignore
+    }
   }
 
   if (loading) return <div style={{ padding: 40, color: '#999', textAlign: 'center' }}>Loading...</div>

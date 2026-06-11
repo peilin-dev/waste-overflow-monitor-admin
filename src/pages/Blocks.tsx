@@ -1,24 +1,23 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { message, Popconfirm } from 'antd'
 import type { Block } from '@/types'
 import { getBlocks, createBlock, updateBlock, deleteBlock } from '@/api'
 
 export default function Blocks() {
   const [blocks, setBlocks] = useState<Block[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [editValues, setEditValues] = useState<Record<number, Partial<Block>>>({})
 
-  const load = async () => {
-    setLoading(true)
+  const load = useCallback(async () => {
     try {
       const res = await getBlocks()
       setBlocks(res.data)
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { void load() }, [load])
 
   const totalBins = blocks.reduce((sum, b) => sum + b.total_floors * b.bins_per_floor, 0)
 
@@ -36,24 +35,33 @@ export default function Blocks() {
       await updateBlock(block.id, changes)
       message.success('Saved')
       setEditValues(prev => { const n = { ...prev }; delete n[block.id]; return n })
-      load()
-    } catch {}
+      setLoading(true)
+      void load()
+    } catch {
+      // ignore
+    }
   }
 
   const handleDelete = async (id: number) => {
     try {
       await deleteBlock(id)
       message.success('Block deleted')
-      load()
-    } catch {}
+      setLoading(true)
+      void load()
+    } catch {
+      // ignore
+    }
   }
 
   const handleAdd = async () => {
     try {
       await createBlock({ name: 'New Block', total_floors: 10, bins_per_floor: 2 })
       message.success('Block added')
-      load()
-    } catch {}
+      setLoading(true)
+      void load()
+    } catch {
+      // ignore
+    }
   }
 
   const inputStyle: React.CSSProperties = {

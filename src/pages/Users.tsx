@@ -1,7 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { message, Popconfirm, Select, Modal, Form, Input } from 'antd'
-import type { User, UserCreate } from '@/types'
-import { getUsers, createUser, updateUser, deleteUser, resetPassword } from '@/api'
+import type { User, UserCreate, Block } from '@/types'
+import {
+  getUsers, createUser, updateUser, deleteUser, resetPassword,
+  getBlocks, getCleanerBlocks, assignBlock, removeBlock,
+} from '@/api'
 
 const roleColor = { admin: '#4a90d9', cleaner: '#5ca85c' }
 const statusColor = { active: '#5ca85c', inactive: '#999' }
@@ -9,25 +12,52 @@ const shiftOptions = ['morning', 'evening', 'night']
 
 export default function Users() {
   const [users, setUsers] = useState<User[]>([])
-  const [loading, setLoading] = useState(false)
+  const [blocks, setBlocks] = useState<Block[]>([])
+  const [assignments, setAssignments] = useState<Record<number, number[]>>({})
+  const [loading, setLoading] = useState(true)
   const [roleFilter, setRoleFilter] = useState<string>('all')
   const [modalOpen, setModalOpen] = useState(false)
   const [resetModal, setResetModal] = useState<User | null>(null)
   const [newPassword, setNewPassword] = useState('')
   const [form] = Form.useForm()
 
-  const load = async () => {
-  setLoading(true)
-  try {
-    const params = roleFilter !== 'all' ? { role: roleFilter } : {}
-    const res = await getUsers(params)
-    setUsers(res.data)
-  } finally {
-    setLoading(false)
-  }
-}
+  const load = useCallback(async () => {
+    try {
+      const params = roleFilter !== 'all' ? { role: roleFilter } : {}
+      const [usersRes, blocksRes] = await Promise.all([getUsers(params), getBlocks()])
+      setUsers(usersRes.data)
+      setBlocks(blocksRes.data)
 
-  useEffect(() => { load() }, [roleFilter])
+      const cleaners = usersRes.data.filter(u => u.role === 'cleaner')
+      const map: Record<number, number[]> = {}
+      await Promise.all(
+        cleaners.map(async (c) => {
+          const res = await getCleanerBlocks(c.id)
+          map[c.id] = res.data.map((b: Block) => b.id)
+        })
+      )
+      setAssignments(map)
+    } finally {
+      setLoading(false)
+    }
+  }, [roleFilter])
+
+  useEffect(() => { void load() }, [load])
+
+  const toggleBlock = async (cleaner: User, blockId: number) => {
+    const assigned = (assignments[cleaner.id] || []).includes(blockId)
+    try {
+      if (assigned) {
+        await removeBlock(cleaner.id, blockId)
+      } else {
+        await assignBlock(cleaner.id, blockId)
+      }
+      const res = await getCleanerBlocks(cleaner.id)
+      setAssignments(prev => ({ ...prev, [cleaner.id]: res.data.map((b: Block) => b.id) }))
+    } catch {
+      // ignore
+    }
+  }
 
   const handleCreate = async () => {
     const values = await form.validateFields() as UserCreate
@@ -36,24 +66,33 @@ export default function Users() {
       message.success('User created')
       setModalOpen(false)
       form.resetFields()
-      load()
-    } catch {}
+      setLoading(true)
+      void load()
+    } catch {
+      // ignore
+    }
   }
 
   const handleToggleStatus = async (user: User) => {
     try {
       await updateUser(user.id, { status: user.status === 'active' ? 'inactive' : 'active' })
       message.success('Status updated')
-      load()
-    } catch {}
+      setLoading(true)
+      void load()
+    } catch {
+      // ignore
+    }
   }
 
   const handleDelete = async (id: number) => {
     try {
       await deleteUser(id)
       message.success('User deleted')
-      load()
-    } catch {}
+      setLoading(true)
+      void load()
+    } catch {
+      // ignore
+    }
   }
 
   const handleResetPassword = async () => {
@@ -63,7 +102,9 @@ export default function Users() {
       message.success('Password reset')
       setResetModal(null)
       setNewPassword('')
-    } catch {}
+    } catch {
+      // ignore
+    }
   }
 
   const inputStyle: React.CSSProperties = {
@@ -72,12 +113,21 @@ export default function Users() {
     background: '#fff', outline: 'none',
   }
 
+  // Show assigned blocks column when cleaner rows are visible
+  const showBlocksCol = roleFilter !== 'admin'
+
+  const headers = [
+    'Name', 'Username', 'Role', 'Zone', 'Shift', 'Phone', 'Status',
+    ...(showBlocksCol ? ['Assigned Blocks'] : []),
+    'Actions',
+  ]
+
   if (loading) return <div style={{ padding: 40, color: '#999', textAlign: 'center' }}>Loading...</div>
 
   return (
     <div style={{ fontFamily: '"Helvetica Neue",Helvetica,Arial,sans-serif' }}>
-      {/* Header */}
-      <div style={{ background: '#fff', border: '1px solid #e0e0e0', borderRadius: 7, marginBottom: 16 }}>
+      <div style={{ background: '#fff', border: '1px solid #e0e0e0', borderRadius: 7 }}>
+        {/* Header */}
         <div style={{ padding: '12px 16px', borderBottom: '1px solid #ededed', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: '#5b9bd5' }}>User Management</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -94,7 +144,7 @@ export default function Users() {
             ))}
             <button onClick={() => { form.resetFields(); setModalOpen(true) }} style={{
               background: '#4a90d9', color: '#fff', border: 'none',
-              borderRadius: 5, padding: '7px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer'
+              borderRadius: 5, padding: '7px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
             }}>
               + Add User
             </button>
@@ -104,8 +154,10 @@ export default function Users() {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
-              {['Name', 'Username', 'Role', 'Zone', 'Shift', 'Phone', 'Status', 'Actions'].map(h => (
-                <th key={h} style={{ background: '#f7f8fa', fontSize: 11, fontWeight: 600, color: '#666', textAlign: 'left', padding: '10px 16px', borderBottom: '1px solid #ededed' }}>{h}</th>
+              {headers.map(h => (
+                <th key={h} style={{ background: '#f7f8fa', fontSize: 11, fontWeight: 600, color: '#666', textAlign: 'left', padding: '10px 16px', borderBottom: '1px solid #ededed' }}>
+                  {h}
+                </th>
               ))}
             </tr>
           </thead>
@@ -116,13 +168,11 @@ export default function Users() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
                     <div style={{
                       width: 30, height: 30, borderRadius: '50%', background: '#eaf2fb', color: '#3a7bc0',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0,
                     }}>
                       {user.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
                     </div>
-                    <div>
-                      <b style={{ fontSize: 12, fontWeight: 600, display: 'block' }}>{user.name}</b>
-                    </div>
+                    <b style={{ fontSize: 12, fontWeight: 600 }}>{user.name}</b>
                   </div>
                 </td>
                 <td style={{ padding: '11px 16px', borderBottom: '1px solid #ededed', fontSize: 12, color: '#666' }}>{user.username}</td>
@@ -130,7 +180,7 @@ export default function Users() {
                   <span style={{
                     fontSize: 10.5, fontWeight: 600, padding: '3px 9px', borderRadius: 11,
                     background: user.role === 'admin' ? '#eaf2fb' : '#e9f3e9',
-                    color: roleColor[user.role]
+                    color: roleColor[user.role],
                   }}>{user.role}</span>
                 </td>
                 <td style={{ padding: '11px 16px', borderBottom: '1px solid #ededed', fontSize: 12, color: '#666' }}>{user.zone || '—'}</td>
@@ -140,13 +190,46 @@ export default function Users() {
                   <span style={{
                     fontSize: 10.5, fontWeight: 600, padding: '3px 9px', borderRadius: 11,
                     background: user.status === 'active' ? '#e9f3e9' : '#eef0f2',
-                    color: statusColor[user.status]
+                    color: statusColor[user.status],
                   }}>{user.status}</span>
                 </td>
+
+                {/* Assigned Blocks column — only when cleaner rows are visible */}
+                {showBlocksCol && (
+                  <td style={{ padding: '11px 16px', borderBottom: '1px solid #ededed' }}>
+                    {user.role === 'cleaner' ? (
+                      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                        {blocks.map(block => {
+                          const isOn = (assignments[user.id] || []).includes(block.id)
+                          return (
+                            <button
+                              key={block.id}
+                              onClick={() => toggleBlock(user, block.id)}
+                              style={{
+                                fontSize: 11, fontWeight: 500, padding: '3px 9px', borderRadius: 4,
+                                cursor: 'pointer', transition: 'all .12s',
+                                background: isOn ? '#eaf2fb' : '#fff',
+                                color: isOn ? '#3a7bc0' : '#999',
+                                border: `1px solid ${isOn ? '#4a90d9' : '#e0e0e0'}`,
+                              }}
+                            >
+                              {isOn && <span style={{ fontSize: 9, fontWeight: 700, marginRight: 3 }}>✓</span>}
+                              {block.name}
+                            </button>
+                          )
+                        })}
+                        {blocks.length === 0 && <span style={{ fontSize: 11, color: '#ccc' }}>No blocks</span>}
+                      </div>
+                    ) : (
+                      <span style={{ fontSize: 12, color: '#ccc' }}>—</span>
+                    )}
+                  </td>
+                )}
+
                 <td style={{ padding: '11px 16px', borderBottom: '1px solid #ededed' }}>
                   <span style={{ display: 'flex', gap: 12, fontSize: 11.5 }}>
                     <a onClick={() => handleToggleStatus(user)} style={{ color: user.status === 'active' ? '#d9534f' : '#5ca85c', cursor: 'pointer', fontWeight: 500 }}>
-                    {user.status === 'active' ? 'Deactivate' : 'Restore'}
+                      {user.status === 'active' ? 'Deactivate' : 'Restore'}
                     </a>
                     <a onClick={() => setResetModal(user)} style={{ color: '#e89c3b', cursor: 'pointer', fontWeight: 500 }}>Reset Pwd</a>
                     <Popconfirm title="Delete this user?" onConfirm={() => handleDelete(user.id)} okText="Yes" cancelText="No">

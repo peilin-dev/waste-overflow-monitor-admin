@@ -1,28 +1,39 @@
+import { useState } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
+import { Modal, Input, message } from 'antd'
 import { useAuthStore } from '@/store/authStore'
+import { changePassword } from '@/api'
 
 const NAV_MAIN = [
   {
-    key: '/dashboard', label: 'Dashboard',
+    key: '/dashboard', label: 'Monitoring', sub: 'Real-time bin status across the community',
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
   },
   {
-    key: '/tasks', label: 'Tasks',
-    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M3 7h18M3 12h18M3 17h12"/></svg>
+    key: '/work-status', label: 'Work Status', sub: 'Live overview of cleaning staff',
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
   },
   {
-    key: '/users', label: 'Employees',
+    key: '/users', label: 'Employees', sub: 'All cleaning staff in the community',
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM23 21v-2a4 4 0 0 0-3-3.87M16 3.13A4 4 0 0 1 16 11"/></svg>
+  },
+  {
+    key: '/task-scoring', label: 'Task Scoring', sub: 'Review and rate completed tasks',
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M12 2l3 6.5 7 .8-5 4.9 1.3 7-6.3-3.4L5.7 21 7 14.2 2 9.3l7-.8z"/></svg>
+  },
+  {
+    key: '/tasks', label: 'Tasks', sub: 'All cleaning tasks across the community',
+    icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M3 7h18M3 12h18M3 17h12"/></svg>
   },
 ]
 
 const NAV_SYSTEM = [
   {
-    key: '/blocks', label: 'Blocks & Bins',
+    key: '/blocks', label: 'Blocks & Bins', sub: 'Configure community structure',
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><path d="M3 21h18M5 21V7l8-4 8 4v14"/></svg>
   },
   {
-    key: '/cleaners', label: 'Cleaner Assignment',
+    key: '/roles', label: 'Roles', sub: 'Define and manage system roles and permissions',
     icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0M20 8l2 2-2 2M18 10h4"/></svg>
   },
 ]
@@ -33,6 +44,27 @@ export default function MainLayout() {
   const { user, logout } = useAuthStore()
 
   const initials = user?.name?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'AD'
+  const [pwModal, setPwModal] = useState(false)
+  const [oldPw, setOldPw] = useState('')
+  const [newPw, setNewPw] = useState('')
+  const [pwLoading, setPwLoading] = useState(false)
+
+  const handleChangePassword = async () => {
+    if (!oldPw || !newPw) { message.warning('Please fill in both fields'); return }
+    if (newPw.length < 6) { message.warning('New password must be at least 6 characters'); return }
+    setPwLoading(true)
+    try {
+      await changePassword(oldPw, newPw)
+      message.success('Password changed successfully')
+      setPwModal(false)
+      setOldPw('')
+      setNewPw('')
+    } catch {
+      // ignore — error shown by interceptor
+    } finally {
+      setPwLoading(false)
+    }
+  }
 
   const NavItem = ({ item }: { item: typeof NAV_MAIN[0] }) => {
     const active = location.pathname === item.key
@@ -87,9 +119,15 @@ export default function MainLayout() {
         {/* Topbar */}
         <header style={{ height: 54, background: '#fff', borderBottom: '1px solid #e0e0e0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 22px', flexShrink: 0 }}>
           <div>
-            <div style={{ fontSize: 15, fontWeight: 600 }}>
-              {[...NAV_MAIN, ...NAV_SYSTEM].find(n => n.key === location.pathname)?.label || 'Dashboard'}
-            </div>
+            {(() => {
+              const current = [...NAV_MAIN, ...NAV_SYSTEM].find(n => n.key === location.pathname)
+              return (
+                <>
+                  <div style={{ fontSize: 15, fontWeight: 600 }}>{current?.label || 'Dashboard'}</div>
+                  {current?.sub && <div style={{ fontSize: 11, color: '#999', marginTop: 1 }}>{current.sub}</div>}
+                </>
+              )
+            })()}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
             <div style={{ width: 32, height: 32, border: '1px solid #e0e0e0', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666', cursor: 'pointer' }}>
@@ -104,6 +142,9 @@ export default function MainLayout() {
                 <span style={{ fontSize: 10, color: '#999' }}>Administrator</span>
               </div>
             </div>
+            <div onClick={() => setPwModal(true)} style={{ cursor: 'pointer', color: '#666', fontSize: 12, fontWeight: 500 }}>
+              Change Password
+            </div>
             <div onClick={() => { logout(); navigate('/login') }} style={{ cursor: 'pointer', color: '#d9534f', fontSize: 12, fontWeight: 500 }}>
               Logout
             </div>
@@ -115,6 +156,26 @@ export default function MainLayout() {
           <Outlet />
         </div>
       </main>
+
+      <Modal
+        title="Change Password"
+        open={pwModal}
+        onOk={handleChangePassword}
+        onCancel={() => { setPwModal(false); setOldPw(''); setNewPw('') }}
+        okText="Update"
+        okButtonProps={{ loading: pwLoading }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 8 }}>
+          <div>
+            <div style={{ fontSize: 12, color: '#666', marginBottom: 5 }}>Current Password</div>
+            <Input.Password value={oldPw} onChange={e => setOldPw(e.target.value)} placeholder="Enter current password" />
+          </div>
+          <div>
+            <div style={{ fontSize: 12, color: '#666', marginBottom: 5 }}>New Password</div>
+            <Input.Password value={newPw} onChange={e => setNewPw(e.target.value)} placeholder="At least 6 characters" />
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

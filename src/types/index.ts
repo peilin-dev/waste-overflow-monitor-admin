@@ -52,8 +52,32 @@ export interface Bin {
   updated_at: string | null
 }
 
+// ─── Bin stats ──────────────────────────────────────
+export interface BinStats {
+  total: number
+  normal: number
+  warning: number
+  full: number
+}
+
 // ─── Task ───────────────────────────────────────────
 export type TaskResult = 'cleaned' | 'false_alarm' | 'damaged' | 'unable'
+
+export interface TaskBinInfo {
+  id: number
+  block_id: number
+  floor: number
+  bin_number: number
+  sensor_id: string
+  current_fill: number
+}
+
+export interface TaskCleanerInfo {
+  id: number
+  name: string
+  username: string
+  phone?: string | null
+}
 
 export interface Task {
   id: number
@@ -69,6 +93,8 @@ export interface Task {
   comment?: string | null
   rated_by?: number | null
   rated_at?: string | null
+  bin?: TaskBinInfo | null
+  cleaner?: TaskCleanerInfo | null
 }
 
 export interface TaskStats {
@@ -77,6 +103,44 @@ export interface TaskStats {
   in_progress: number
   completed: number
   rated: number
+}
+
+// ─── User performance ────────────────────────────────
+export interface UserPerformance {
+  user_id: number
+  name: string
+  total_tasks: number
+  completed_tasks: number
+  pending_tasks: number
+  average_rating: number | null
+  rating_distribution: Record<string, number>
+}
+
+// ─── Role ───────────────────────────────────────────
+export interface Role {
+  id: number
+  name: string
+  description: string | null
+  access_level: 'High' | 'Medium' | 'Low'
+  permissions_count: number
+  status: 'active' | 'inactive'
+  assigned_users?: number
+  created_at?: string
+}
+
+export interface RoleCreate {
+  name: string
+  description?: string | null
+  access_level: 'High' | 'Medium' | 'Low'
+  permissions_count: number
+}
+
+export interface RoleUpdate {
+  name?: string
+  description?: string
+  access_level?: 'High' | 'Medium' | 'Low'
+  permissions_count?: number
+  status?: 'active' | 'inactive'
 }
 
 // ─── Auth ───────────────────────────────────────────

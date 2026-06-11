@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Table, Button, Modal, Form, Input, InputNumber, Select, Popconfirm, message, Tag, Progress } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 import type { Bin, Block } from '@/types'
@@ -9,13 +9,12 @@ const statusColor = { normal: 'green', warning: 'orange', full: 'red' }
 export default function Bins() {
   const [bins, setBins] = useState<Bin[]>([])
   const [blocks, setBlocks] = useState<Block[]>([])
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<Bin | null>(null)
   const [form] = Form.useForm()
 
-  const load = async () => {
-    setLoading(true)
+  const load = useCallback(async () => {
     try {
       const [binsRes, blocksRes] = await Promise.all([getBins(), getBlocks()])
       setBins(binsRes.data)
@@ -23,9 +22,9 @@ export default function Bins() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { void load() }, [load])
 
   const openCreate = () => {
     setEditing(null)
@@ -50,16 +49,22 @@ export default function Bins() {
         message.success('Bin created')
       }
       setModalOpen(false)
-      load()
-    } catch {}
+      setLoading(true)
+      void load()
+    } catch {
+      // ignore
+    }
   }
 
   const handleDelete = async (id: number) => {
     try {
       await deleteBin(id)
       message.success('Bin deleted')
-      load()
-    } catch {}
+      setLoading(true)
+      void load()
+    } catch {
+      // ignore
+    }
   }
 
   const columns = [
