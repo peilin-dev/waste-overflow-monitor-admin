@@ -21,7 +21,7 @@ http.interceptors.response.use(
   (res) => res,
   (err) => {
     const status = err.response?.status
-    if (status === 401) {
+    if (status === 401 && !err.config?.url?.includes('/auth/login')) {
       localStorage.removeItem('token')
       window.location.href = '/login'
     } else if (status === 403) {
