@@ -137,7 +137,7 @@ export interface RoleCreate {
 
 export interface RoleUpdate {
   name?: string
-  description?: string
+  description?: string | null
   access_level?: 'High' | 'Medium' | 'Low'
   permissions_count?: number
   status?: 'active' | 'inactive'
