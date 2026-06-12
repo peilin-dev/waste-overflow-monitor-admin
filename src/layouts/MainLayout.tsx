@@ -138,7 +138,7 @@ export default function MainLayout() {
                 {initials}
               </div>
               <div>
-                <b style={{ fontSize: 12, display: 'block', lineHeight: 1.2 }}>{user?.name || user?.account}</b>
+                <b style={{ fontSize: 12, display: 'block', lineHeight: 1.2 }}>{user?.name || user?.username}</b>
                 <span style={{ fontSize: 10, color: '#999' }}>Administrator</span>
               </div>
             </div>

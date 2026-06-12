@@ -145,7 +145,7 @@ export default function TaskScoring() {
                   {/* Rating */}
                   <td style={{ padding: '11px 16px', borderBottom: '1px solid #ededed' }}>
                     {isRated ? (
-                      <span style={{ fontSize: 12, color: '#e8a93b', fontWeight: 700 }}>★ {task.rating}.0</span>
+                      <span style={{ fontSize: 12, color: '#e8a93b', fontWeight: 700 }}>★ {task.rating}</span>
                     ) : (
                       <span style={{ display: 'inline-flex', gap: 2 }}>
                         {[1, 2, 3, 4, 5].map(n => (

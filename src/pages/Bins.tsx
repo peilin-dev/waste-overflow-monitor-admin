@@ -90,7 +90,7 @@ export default function Bins() {
       render: (v: string) => <Tag color={statusColor[v as keyof typeof statusColor]}>{v.toUpperCase()}</Tag>
     },
     {
-      title: 'Last Updated', dataIndex: 'last_updated', width: 160,
+      title: 'Last Updated', dataIndex: 'updated_at', width: 160,
       render: (v: string) => v ? new Date(v).toLocaleString() : '—'
     },
     {
