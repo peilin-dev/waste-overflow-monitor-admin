@@ -35,7 +35,6 @@ export default function Blocks() {
       await updateBlock(block.id, changes)
       message.success('Saved')
       setEditValues(prev => { const n = { ...prev }; delete n[block.id]; return n })
-      setLoading(true)
       void load()
     } catch {
       // ignore
@@ -46,7 +45,6 @@ export default function Blocks() {
     try {
       await deleteBlock(id)
       message.success('Block deleted')
-      setLoading(true)
       void load()
     } catch {
       // ignore
@@ -57,7 +55,6 @@ export default function Blocks() {
     try {
       await createBlock({ name: 'New Block', total_floors: 10, bins_per_floor: 2 })
       message.success('Block added')
-      setLoading(true)
       void load()
     } catch {
       // ignore

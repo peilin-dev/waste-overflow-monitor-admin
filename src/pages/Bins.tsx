@@ -49,7 +49,6 @@ export default function Bins() {
         message.success('Bin created')
       }
       setModalOpen(false)
-      setLoading(true)
       void load()
     } catch {
       // ignore
@@ -60,7 +59,6 @@ export default function Bins() {
     try {
       await deleteBin(id)
       message.success('Bin deleted')
-      setLoading(true)
       void load()
     } catch {
       // ignore

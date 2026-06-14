@@ -45,7 +45,6 @@ export default function TaskScoring() {
       // clear draft and editing state
       setDrafts(prev => { const n = { ...prev }; delete n[task.id]; return n })
       setEditing(prev => { const n = new Set(prev); n.delete(task.id); return n })
-      setLoading(true)
       void load()
     } catch {
       // ignore
@@ -145,7 +144,11 @@ export default function TaskScoring() {
                   {/* Rating */}
                   <td style={{ padding: '11px 16px', borderBottom: '1px solid #ededed' }}>
                     {isRated ? (
-                      <span style={{ fontSize: 12, color: '#e8a93b', fontWeight: 700 }}>★ {task.rating}</span>
+                      <span>
+                        {[1, 2, 3, 4, 5].map(n => (
+                          <span key={n} style={{ fontSize: 18, color: n <= (task.rating ?? 0) ? '#e8a93b' : '#dfe3e8' }}>★</span>
+                        ))}
+                      </span>
                     ) : (
                       <span style={{ display: 'inline-flex', gap: 2 }}>
                         {[1, 2, 3, 4, 5].map(n => (

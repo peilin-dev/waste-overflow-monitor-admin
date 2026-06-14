@@ -62,7 +62,6 @@ export default function Roles() {
         message.success('Role created')
       }
       setModalOpen(false)
-      setLoading(true)
       void load()
     } catch {
       // ignore - interceptor handles error display
@@ -73,7 +72,6 @@ export default function Roles() {
     try {
       await deactivateRole(role.id)
       message.success('Role deactivated')
-      setLoading(true)
       void load()
     } catch {
       // ignore
@@ -84,7 +82,6 @@ export default function Roles() {
     try {
       await restoreRole(role.id)
       message.success('Role restored')
-      setLoading(true)
       void load()
     } catch {
       // ignore

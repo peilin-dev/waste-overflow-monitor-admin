@@ -66,7 +66,6 @@ export default function Users() {
       message.success('User created')
       setModalOpen(false)
       form.resetFields()
-      setLoading(true)
       void load()
     } catch {
       // ignore
@@ -77,7 +76,6 @@ export default function Users() {
     try {
       await updateUser(user.id, { status: user.status === 'active' ? 'inactive' : 'active' })
       message.success('Status updated')
-      setLoading(true)
       void load()
     } catch {
       // ignore
@@ -88,7 +86,6 @@ export default function Users() {
     try {
       await deleteUser(id)
       message.success('User deleted')
-      setLoading(true)
       void load()
     } catch {
       // ignore
