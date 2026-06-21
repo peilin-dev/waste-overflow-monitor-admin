@@ -108,8 +108,7 @@ export default function TaskScoring() {
             ) : tasks.map(task => {
               const cleanerName = getCleanerName(task)
               const draft = getDraft(task.id)
-              const commentEditable = task.status !== 'rated' || editing.has(task.id)
-              const showSubmit = commentEditable || !!drafts[task.id]
+              const isEditing = task.status !== 'rated' || editing.has(task.id)
 
               return (
                 <tr key={task.id}>
@@ -143,46 +142,46 @@ export default function TaskScoring() {
                     {fmt(task.completed_at ?? task.rated_at)}
                   </td>
 
-                  {/* Rating — SVG stars, always interactive */}
+                  {/* Rating */}
                   <td style={{ padding: '11px 16px', borderBottom: '1px solid #ededed' }}>
-                    <span style={{ display: 'inline-flex', gap: 3 }}>
-                      {[1, 2, 3, 4, 5].map(n => {
-                        const activeRating = drafts[task.id]?.rating ?? task.rating ?? 0
-                        const starKey = `${task.id}-${n}`
-                        return (
-                          <svg
-                            key={n}
-                            viewBox="0 0 24 24"
-                            fill="currentColor"
-                            width={18}
-                            height={18}
-                            style={{
-                              cursor: 'pointer',
-                              color: n <= activeRating ? '#e8a93b' : '#dfe3e8',
-                              transition: 'color .1s, transform .1s',
-                              transform: hoveredStar === starKey ? 'scale(1.1)' : 'none',
-                              flexShrink: 0,
-                            }}
-                            onMouseEnter={() => setHoveredStar(starKey)}
-                            onMouseLeave={() => setHoveredStar(null)}
-                            onClick={() => {
-                              if (task.status === 'rated' && !drafts[task.id]) {
-                                setDrafts(prev => ({ ...prev, [task.id]: { rating: n, comment: task.comment ?? '' } }))
-                              } else {
-                                setDraftRating(task.id, n)
-                              }
-                            }}
-                          >
-                            <path d="M12 2l3 6.5 7 .8-5 4.9 1.3 7-6.3-3.4L5.7 21 7 14.2 2 9.3l7-.8z"/>
-                          </svg>
-                        )
-                      })}
-                    </span>
+                    {isEditing ? (
+                      <span style={{ display: 'inline-flex', gap: 3 }}>
+                        {[1, 2, 3, 4, 5].map(n => {
+                          const activeRating = draft.rating
+                          const starKey = `${task.id}-${n}`
+                          return (
+                            <svg
+                              key={n}
+                              viewBox="0 0 24 24"
+                              fill="currentColor"
+                              width={18}
+                              height={18}
+                              style={{
+                                cursor: 'pointer',
+                                color: n <= activeRating ? '#e8a93b' : '#dfe3e8',
+                                transition: 'color .1s, transform .1s',
+                                transform: hoveredStar === starKey ? 'scale(1.1)' : 'none',
+                                flexShrink: 0,
+                              }}
+                              onMouseEnter={() => setHoveredStar(starKey)}
+                              onMouseLeave={() => setHoveredStar(null)}
+                              onClick={() => setDraftRating(task.id, n)}
+                            >
+                              <path d="M12 2l3 6.5 7 .8-5 4.9 1.3 7-6.3-3.4L5.7 21 7 14.2 2 9.3l7-.8z"/>
+                            </svg>
+                          )
+                        })}
+                      </span>
+                    ) : (
+                      <span style={{ fontSize: 10.5, fontWeight: 600, padding: '3px 9px', borderRadius: 11, background: '#e9f3e9', color: '#5ca85c' }}>
+                        ★ {task.rating}.0 · Rated
+                      </span>
+                    )}
                   </td>
 
-                  {/* Comment — editable only via Edit button */}
+                  {/* Comment */}
                   <td style={{ padding: '11px 16px', borderBottom: '1px solid #ededed' }}>
-                    {commentEditable ? (
+                    {isEditing ? (
                       <input
                         style={{
                           border: '1px solid #e0e0e0', borderRadius: 5, height: 30,
@@ -200,7 +199,7 @@ export default function TaskScoring() {
 
                   {/* Action */}
                   <td style={{ padding: '11px 16px', borderBottom: '1px solid #ededed' }}>
-                    {showSubmit ? (
+                    {isEditing ? (
                       <button
                         onClick={() => handleSubmit(task)}
                         style={{
@@ -211,18 +210,13 @@ export default function TaskScoring() {
                         {task.status === 'rated' ? 'Update' : 'Submit'}
                       </button>
                     ) : (
-                      <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 10.5, fontWeight: 600, padding: '3px 9px', borderRadius: 11, background: '#e9f3e9', color: '#5ca85c' }}>
-                          ★ Rated
-                        </span>
-                        <a
-                          onClick={() => {
-                            setEditing(prev => new Set(prev).add(task.id))
-                            setDrafts(prev => ({ ...prev, [task.id]: { rating: task.rating ?? 0, comment: task.comment ?? '' } }))
-                          }}
-                          style={{ fontSize: 11.5, color: '#4a90d9', cursor: 'pointer', fontWeight: 500 }}
-                        >Edit</a>
-                      </span>
+                      <a
+                        onClick={() => {
+                          setEditing(prev => new Set(prev).add(task.id))
+                          setDrafts(prev => ({ ...prev, [task.id]: { rating: task.rating ?? 0, comment: task.comment ?? '' } }))
+                        }}
+                        style={{ fontSize: 11.5, color: '#4a90d9', cursor: 'pointer', fontWeight: 500 }}
+                      >Edit</a>
                     )}
                   </td>
                 </tr>
