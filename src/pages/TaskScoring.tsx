@@ -11,6 +11,7 @@ export default function TaskScoring() {
   const [drafts, setDrafts] = useState<Record<number, { rating: number; comment: string }>>({})
   // tasks being edited (re-rating already rated tasks)
   const [editing, setEditing] = useState<Set<number>>(new Set())
+  const [hoveredStar, setHoveredStar] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     try {
@@ -142,26 +143,40 @@ export default function TaskScoring() {
                     {fmt(task.completed_at ?? task.rated_at)}
                   </td>
 
-                  {/* Rating — always interactive */}
+                  {/* Rating — SVG stars, always interactive */}
                   <td style={{ padding: '11px 16px', borderBottom: '1px solid #ededed' }}>
-                    <span style={{ display: 'inline-flex', gap: 2 }}>
-                      {[1, 2, 3, 4, 5].map(n => (
-                        <span
-                          key={n}
-                          onClick={() => {
-                            if (task.status === 'rated' && !drafts[task.id]) {
-                              setDrafts(prev => ({ ...prev, [task.id]: { rating: n, comment: task.comment ?? '' } }))
-                            } else {
-                              setDraftRating(task.id, n)
-                            }
-                          }}
-                          style={{
-                            fontSize: 22, cursor: 'pointer', lineHeight: 1,
-                            color: n <= (drafts[task.id]?.rating ?? task.rating ?? 0) ? '#e8a93b' : '#dfe3e8',
-                            transition: 'color .1s',
-                          }}
-                        >★</span>
-                      ))}
+                    <span style={{ display: 'inline-flex', gap: 3 }}>
+                      {[1, 2, 3, 4, 5].map(n => {
+                        const activeRating = drafts[task.id]?.rating ?? task.rating ?? 0
+                        const starKey = `${task.id}-${n}`
+                        return (
+                          <svg
+                            key={n}
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            width={18}
+                            height={18}
+                            style={{
+                              cursor: 'pointer',
+                              color: n <= activeRating ? '#e8a93b' : '#dfe3e8',
+                              transition: 'color .1s, transform .1s',
+                              transform: hoveredStar === starKey ? 'scale(1.1)' : 'none',
+                              flexShrink: 0,
+                            }}
+                            onMouseEnter={() => setHoveredStar(starKey)}
+                            onMouseLeave={() => setHoveredStar(null)}
+                            onClick={() => {
+                              if (task.status === 'rated' && !drafts[task.id]) {
+                                setDrafts(prev => ({ ...prev, [task.id]: { rating: n, comment: task.comment ?? '' } }))
+                              } else {
+                                setDraftRating(task.id, n)
+                              }
+                            }}
+                          >
+                            <path d="M12 2l3 6.5 7 .8-5 4.9 1.3 7-6.3-3.4L5.7 21 7 14.2 2 9.3l7-.8z"/>
+                          </svg>
+                        )
+                      })}
                     </span>
                   </td>
 
