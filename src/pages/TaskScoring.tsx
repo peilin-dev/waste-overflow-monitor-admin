@@ -106,8 +106,9 @@ export default function TaskScoring() {
               </tr>
             ) : tasks.map(task => {
               const cleanerName = getCleanerName(task)
-              const isRated = task.status === 'rated' && !editing.has(task.id)
               const draft = getDraft(task.id)
+              const commentEditable = task.status !== 'rated' || editing.has(task.id)
+              const showSubmit = commentEditable || !!drafts[task.id]
 
               return (
                 <tr key={task.id}>
@@ -141,36 +142,32 @@ export default function TaskScoring() {
                     {fmt(task.completed_at ?? task.rated_at)}
                   </td>
 
-                  {/* Rating */}
+                  {/* Rating — always interactive */}
                   <td style={{ padding: '11px 16px', borderBottom: '1px solid #ededed' }}>
-                    {isRated ? (
-                      <span>
-                        {[1, 2, 3, 4, 5].map(n => (
-                          <span key={n} style={{ fontSize: 18, color: n <= (task.rating ?? 0) ? '#e8a93b' : '#dfe3e8' }}>★</span>
-                        ))}
-                      </span>
-                    ) : (
-                      <span style={{ display: 'inline-flex', gap: 2 }}>
-                        {[1, 2, 3, 4, 5].map(n => (
-                          <span
-                            key={n}
-                            onClick={() => setDraftRating(task.id, n)}
-                            style={{
-                              fontSize: 22, cursor: 'pointer', lineHeight: 1,
-                              color: n <= draft.rating ? '#e8a93b' : '#dfe3e8',
-                              transition: 'color .1s',
-                            }}
-                          >★</span>
-                        ))}
-                      </span>
-                    )}
+                    <span style={{ display: 'inline-flex', gap: 2 }}>
+                      {[1, 2, 3, 4, 5].map(n => (
+                        <span
+                          key={n}
+                          onClick={() => {
+                            if (task.status === 'rated' && !drafts[task.id]) {
+                              setDrafts(prev => ({ ...prev, [task.id]: { rating: n, comment: task.comment ?? '' } }))
+                            } else {
+                              setDraftRating(task.id, n)
+                            }
+                          }}
+                          style={{
+                            fontSize: 22, cursor: 'pointer', lineHeight: 1,
+                            color: n <= (drafts[task.id]?.rating ?? task.rating ?? 0) ? '#e8a93b' : '#dfe3e8',
+                            transition: 'color .1s',
+                          }}
+                        >★</span>
+                      ))}
+                    </span>
                   </td>
 
-                  {/* Comment */}
+                  {/* Comment — editable only via Edit button */}
                   <td style={{ padding: '11px 16px', borderBottom: '1px solid #ededed' }}>
-                    {isRated ? (
-                      <span style={{ fontSize: 11.5, color: '#666' }}>{task.comment || '—'}</span>
-                    ) : (
+                    {commentEditable ? (
                       <input
                         style={{
                           border: '1px solid #e0e0e0', borderRadius: 5, height: 30,
@@ -181,12 +178,24 @@ export default function TaskScoring() {
                         value={draft.comment}
                         onChange={e => setDraftComment(task.id, e.target.value)}
                       />
+                    ) : (
+                      <span style={{ fontSize: 11.5, color: '#666' }}>{task.comment || '—'}</span>
                     )}
                   </td>
 
                   {/* Action */}
                   <td style={{ padding: '11px 16px', borderBottom: '1px solid #ededed' }}>
-                    {isRated ? (
+                    {showSubmit ? (
+                      <button
+                        onClick={() => handleSubmit(task)}
+                        style={{
+                          background: '#4a90d9', color: '#fff', border: 'none',
+                          borderRadius: 5, padding: '5px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer',
+                        }}
+                      >
+                        {task.status === 'rated' ? 'Update' : 'Submit'}
+                      </button>
+                    ) : (
                       <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <span style={{ fontSize: 10.5, fontWeight: 600, padding: '3px 9px', borderRadius: 11, background: '#e9f3e9', color: '#5ca85c' }}>
                           ★ Rated
@@ -199,16 +208,6 @@ export default function TaskScoring() {
                           style={{ fontSize: 11.5, color: '#4a90d9', cursor: 'pointer', fontWeight: 500 }}
                         >Edit</a>
                       </span>
-                    ) : (
-                      <button
-                        onClick={() => handleSubmit(task)}
-                        style={{
-                          background: '#4a90d9', color: '#fff', border: 'none',
-                          borderRadius: 5, padding: '5px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer',
-                        }}
-                      >
-                        {task.status === 'rated' ? 'Update' : 'Submit'}
-                      </button>
                     )}
                   </td>
                 </tr>
