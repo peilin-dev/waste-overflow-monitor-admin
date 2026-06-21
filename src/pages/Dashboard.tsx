@@ -7,14 +7,6 @@ const POLL_MS = 30000
 
 interface Stats { total: number; pending: number; in_progress: number; completed: number; rated: number }
 
-function FillBar({ pct }: { pct: number }) {
-  const color = pct >= 90 ? '#d9534f' : pct >= 60 ? '#e89c3b' : '#5ca85c'
-  return (
-    <div style={{ background: '#f0f0f0', borderRadius: 4, height: 6, width: '100%', overflow: 'hidden' }}>
-      <div style={{ width: `${Math.min(pct, 100)}%`, height: '100%', background: color, borderRadius: 4, transition: 'width .3s' }} />
-    </div>
-  )
-}
 
 function StatusDot({ status }: { status: string }) {
   const colors: Record<string, string> = {
