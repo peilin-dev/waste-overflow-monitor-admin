@@ -4,14 +4,18 @@ import type { Block } from '@/types'
 import { getBlocks, createBlock, updateBlock, deleteBlock } from '@/api'
 
 export default function Blocks() {
-  const [blocks, setBlocks] = useState<Block[]>([])
-  const [loading, setLoading] = useState(true)
-  const [editValues, setEditValues] = useState<Record<number, Partial<Block>>>({})
+  const [blocks, setBlocks]       = useState<Block[]>([])
+  const [loading, setLoading]     = useState(true)
+  const [saved, setSaved]         = useState<Block[]>([])   // snapshot for cancel
+  const [drafts, setDrafts]       = useState<Record<number, Partial<Block>>>({})
+  const [saving, setSaving]       = useState(false)
 
   const load = useCallback(async () => {
     try {
       const res = await getBlocks()
       setBlocks(res.data)
+      setSaved(res.data)
+      setDrafts({})
     } finally {
       setLoading(false)
     }
@@ -19,26 +23,40 @@ export default function Blocks() {
 
   useEffect(() => { void load() }, [load])
 
-  const totalBins = blocks.reduce((sum, b) => sum + b.total_floors * b.bins_per_floor, 0)
+  const isDirty = Object.keys(drafts).length > 0
+
+  const totalBins = blocks.reduce((sum, b) => {
+    const floors = (drafts[b.id]?.total_floors as number | undefined) ?? b.total_floors
+    const bpf    = (drafts[b.id]?.bins_per_floor as number | undefined) ?? b.bins_per_floor
+    return sum + floors * bpf
+  }, 0)
 
   const getValue = (block: Block, field: keyof Block) =>
-    editValues[block.id]?.[field] ?? block[field]
+    (drafts[block.id]?.[field] ?? block[field]) as string | number
 
-  const setValue = (id: number, field: keyof Block, value: string | number) => {
-    setEditValues(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }))
-  }
+  const setValue = (id: number, field: keyof Block, value: string | number) =>
+    setDrafts(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }))
 
-  const handleSave = async (block: Block) => {
-    const changes = editValues[block.id]
-    if (!changes) return
+  const handleSave = async () => {
+    setSaving(true)
     try {
-      await updateBlock(block.id, changes)
-      message.success('Saved')
-      setEditValues(prev => { const n = { ...prev }; delete n[block.id]; return n })
+      await Promise.all(
+        Object.entries(drafts).map(([id, changes]) =>
+          updateBlock(Number(id), changes)
+        )
+      )
+      message.success('Configuration saved')
       void load()
     } catch {
-      // ignore
+      // ignore — interceptor handles display
+    } finally {
+      setSaving(false)
     }
+  }
+
+  const handleCancel = () => {
+    setBlocks(saved)
+    setDrafts({})
   }
 
   const handleDelete = async (id: number) => {
@@ -64,26 +82,29 @@ export default function Blocks() {
   const inputStyle: React.CSSProperties = {
     width: '100%', height: 32, border: '1px solid #e0e0e0', borderRadius: 5,
     padding: '0 11px', fontSize: 12, fontFamily: 'inherit', color: '#333',
-    background: '#fff', outline: 'none',
+    background: '#fff', outline: 'none', boxSizing: 'border-box',
   }
 
   if (loading) return <div style={{ padding: 40, color: '#999', textAlign: 'center' }}>Loading...</div>
 
   return (
     <div style={{ fontFamily: '"Helvetica Neue",Helvetica,Arial,sans-serif' }}>
+
       {/* Section 1: System title */}
-      <div style={{ background: '#fff', border: '1px solid #e0e0e0', borderRadius: 7, marginBottom: 16 }}>
+      <div style={{ background: '#fff', border: '1px solid #e0e0e0', borderRadius: 7, marginBottom: 14 }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: '#5b9bd5', padding: '12px 16px', borderBottom: '1px solid #ededed' }}>
           1. Project General Settings
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 18, padding: 16 }}>
           <div>
             <label style={{ display: 'block', fontSize: 11.5, color: '#666', fontWeight: 500, marginBottom: 5 }}>System Title</label>
-            <input style={inputStyle} defaultValue="Smart Waste Overflow Monitoring System" readOnly />
+            <input style={{ ...inputStyle, background: '#f7f8fa', color: '#999', cursor: 'not-allowed' }}
+              value="Smart Waste Overflow Monitoring System" readOnly />
           </div>
           <div>
             <label style={{ display: 'block', fontSize: 11.5, color: '#666', fontWeight: 500, marginBottom: 5 }}>Total Blocks (auto)</label>
-            <input style={{ ...inputStyle, background: '#f7f8fa', color: '#999', cursor: 'not-allowed' }} value={blocks.length} readOnly />
+            <input style={{ ...inputStyle, background: '#f7f8fa', color: '#999', cursor: 'not-allowed' }}
+              value={blocks.length} readOnly />
           </div>
         </div>
       </div>
@@ -91,7 +112,7 @@ export default function Blocks() {
       {/* Section 2: Block table */}
       <div style={{ background: '#fff', border: '1px solid #e0e0e0', borderRadius: 7 }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: '#5b9bd5', padding: '12px 16px', borderBottom: '1px solid #ededed' }}>
-          2. Block & Floor Layout Configuration
+          2. Block &amp; Floor Layout Configuration
         </div>
 
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -104,33 +125,30 @@ export default function Blocks() {
           </thead>
           <tbody>
             {blocks.map(block => {
-              const dirty = !!editValues[block.id]
+              const dirty = !!drafts[block.id]
               return (
-                <tr key={block.id}>
+                <tr key={block.id} style={{ background: dirty ? '#fffdf5' : undefined }}>
                   <td style={{ padding: '10px 16px', borderBottom: '1px solid #ededed' }}>
                     <input
                       style={inputStyle}
                       value={String(getValue(block, 'name'))}
                       onChange={e => setValue(block.id, 'name', e.target.value)}
-                      onBlur={() => dirty && handleSave(block)}
                     />
                   </td>
-                  <td style={{ padding: '10px 16px', borderBottom: '1px solid #ededed' }}>
+                  <td style={{ padding: '10px 16px', borderBottom: '1px solid #ededed', width: 200 }}>
                     <input
                       style={{ ...inputStyle, textAlign: 'center' }}
                       type="number" min={1} max={100}
                       value={String(getValue(block, 'total_floors'))}
                       onChange={e => setValue(block.id, 'total_floors', parseInt(e.target.value) || 1)}
-                      onBlur={() => dirty && handleSave(block)}
                     />
                   </td>
-                  <td style={{ padding: '10px 16px', borderBottom: '1px solid #ededed' }}>
+                  <td style={{ padding: '10px 16px', borderBottom: '1px solid #ededed', width: 180 }}>
                     <input
                       style={{ ...inputStyle, textAlign: 'center' }}
                       type="number" min={1} max={10}
                       value={String(getValue(block, 'bins_per_floor'))}
                       onChange={e => setValue(block.id, 'bins_per_floor', parseInt(e.target.value) || 1)}
-                      onBlur={() => dirty && handleSave(block)}
                     />
                   </td>
                   <td style={{ padding: '10px 16px', borderBottom: '1px solid #ededed' }}>
@@ -144,10 +162,10 @@ export default function Blocks() {
           </tbody>
         </table>
 
-        <div style={{ padding: '14px 16px', borderTop: '1px solid #ededed', display: 'flex', alignItems: 'center', gap: 16 }}>
+        <div style={{ padding: '12px 16px', borderTop: '1px solid #ededed', display: 'flex', alignItems: 'center', gap: 14 }}>
           <button onClick={handleAdd} style={{
             background: '#fff', color: '#4a90d9', border: '1px dashed #4a90d9',
-            borderRadius: 5, padding: '6px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer'
+            borderRadius: 5, padding: '6px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
           }}>
             + Add Block
           </button>
@@ -156,6 +174,38 @@ export default function Blocks() {
           </span>
         </div>
       </div>
+
+      {/* Save / Cancel */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 14 }}>
+        <button
+          onClick={handleCancel}
+          disabled={!isDirty}
+          style={{
+            background: '#fff', color: isDirty ? '#666' : '#bbb',
+            border: `1px solid ${isDirty ? '#d0d0d0' : '#e8e8e8'}`,
+            borderRadius: 5, padding: '8px 18px', fontSize: 12.5, fontWeight: 500,
+            cursor: isDirty ? 'pointer' : 'not-allowed',
+          }}
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleSave}
+          disabled={!isDirty || saving}
+          style={{
+            background: isDirty ? '#4a90d9' : '#a8c8ef',
+            color: '#fff', border: 'none',
+            borderRadius: 5, padding: '8px 18px', fontSize: 12.5, fontWeight: 600,
+            cursor: isDirty ? 'pointer' : 'not-allowed',
+          }}
+        >
+          {saving ? 'Saving…' : 'Save Configuration'}
+        </button>
+      </div>
+
+      <p style={{ fontSize: 11, color: '#bbb', marginTop: 10, lineHeight: 1.5 }}>
+        The structure defined here determines what appears on the <b>Monitoring</b> page and what bins can generate overflow tasks.
+      </p>
     </div>
   )
 }
