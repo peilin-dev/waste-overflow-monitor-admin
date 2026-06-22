@@ -101,14 +101,14 @@ export default function Bins() {
     <div style={{ fontFamily: '"Helvetica Neue",Helvetica,Arial,sans-serif' }}>
 
       {/* Stat cards */}
-      <div style={{ display: 'flex', gap: 14, marginBottom: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 14, marginBottom: 14 }}>
         {[
           { label: 'Total Bins',    value: bins.length,    color: '#333' },
           { label: 'Full (≥ 90%)',  value: fullCount,      color: fullCount > 0 ? '#d9534f' : '#999' },
           { label: 'Warning (≥ 60%)', value: warningCount, color: warningCount > 0 ? '#e89c3b' : '#999' },
           { label: 'Normal',        value: bins.length - fullCount - warningCount, color: '#5ca85c' },
         ].map(({ label, value, color }) => (
-          <div key={label} style={{ flex: 1, background: '#fff', border: '1px solid #e0e0e0', borderRadius: 7, padding: '14px 15px' }}>
+          <div key={label} style={{ background: '#fff', border: '1px solid #e0e0e0', borderRadius: 7, padding: '14px 15px' }}>
             <div style={{ fontSize: 11, color: '#999' }}>{label}</div>
             <div style={{ fontSize: 24, fontWeight: 700, marginTop: 7, color }}>{value}</div>
           </div>
@@ -130,7 +130,8 @@ export default function Bins() {
           </button>
         </div>
 
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', minWidth: 700, borderCollapse: 'collapse' }}>
           <thead>
             <tr>
               {['Block', 'Floor', 'Bin #', 'Sensor ID', 'Fill Level', 'Status', 'Last Updated', 'Actions'].map(h => (
@@ -182,6 +183,7 @@ export default function Bins() {
             ))}
           </tbody>
         </table>
+        </div>
 
         <div style={{ padding: '10px 16px', borderTop: '1px solid #ededed', fontSize: 11.5, color: '#999' }}>
           {bins.length} bin{bins.length !== 1 ? 's' : ''} total

@@ -148,7 +148,8 @@ export default function Users() {
           </div>
         </div>
 
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', minWidth: 720, borderCollapse: 'collapse' }}>
           <thead>
             <tr>
               {headers.map(h => (
@@ -238,6 +239,7 @@ export default function Users() {
             ))}
           </tbody>
         </table>
+        </div>
 
         <div style={{ padding: '12px 16px', borderTop: '1px solid #ededed', fontSize: 11.5, color: '#999' }}>
           {users.length} user{users.length !== 1 ? 's' : ''} found

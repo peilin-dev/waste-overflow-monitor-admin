@@ -112,6 +112,20 @@ export default function MainLayout() {
         {NAV_MAIN.map(item => <NavItem key={item.key} item={item} />)}
         <div style={{ fontSize: 10, fontWeight: 700, color: '#999', letterSpacing: '0.06em', textTransform: 'uppercase', margin: '14px 8px 8px' }}>System</div>
         {NAV_SYSTEM.map(item => <NavItem key={item.key} item={item} />)}
+        {isMobile && (
+          <div style={{ marginTop: 14 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#999', letterSpacing: '0.06em', textTransform: 'uppercase', margin: '0 8px 8px' }}>Account</div>
+            <div
+              onClick={() => { setPwModal(true); setDrawerOpen(false) }}
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 11px', borderRadius: 6, fontSize: 12.5, cursor: 'pointer', marginBottom: 2, fontWeight: 500, color: '#666' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = '#f4f6f8' }}
+              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'transparent' }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              Change Password
+            </div>
+          </div>
+        )}
       </nav>
       <div style={{ padding: '14px 18px', borderTop: '1px solid #ededed', fontSize: 10.5, color: '#999' }}>
         Admin Portal · v1.0

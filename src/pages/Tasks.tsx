@@ -128,9 +128,9 @@ export default function Tasks() {
     <div style={{ fontFamily: '"Helvetica Neue",Helvetica,Arial,sans-serif' }}>
 
       {/* Stats */}
-      <div style={{ display: 'flex', gap: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 14 }}>
         {stats.map(({ label, value, color }) => (
-          <div key={label} style={{ flex: 1, background: '#fff', border: '1px solid #e0e0e0', borderRadius: 7, padding: '14px 15px' }}>
+          <div key={label} style={{ background: '#fff', border: '1px solid #e0e0e0', borderRadius: 7, padding: '14px 15px' }}>
             <div style={{ fontSize: 11, color: '#999' }}>{label}</div>
             <div style={{ fontSize: 24, fontWeight: 700, marginTop: 7, color }}>{value}</div>
           </div>
@@ -138,7 +138,7 @@ export default function Tasks() {
       </div>
 
       {/* Filter chips + live indicator */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 14 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6, marginTop: 14 }}>
         {filters.map(({ key, label }) => (
           <button key={key} onClick={() => setStatusFilter(key)} style={{
             fontSize: 11.5, fontWeight: 500, padding: '6px 14px', borderRadius: 14,
@@ -165,7 +165,8 @@ export default function Tasks() {
           </div>
         </div>
 
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', minWidth: 750, borderCollapse: 'collapse' }}>
           <thead>
             <tr>
               {['Task ID', 'Bin Location', 'Status', 'Assigned To', 'Created', 'Last Update', 'Actions'].map(h => (
@@ -240,6 +241,7 @@ export default function Tasks() {
             })}
           </tbody>
         </table>
+        </div>
       </div>
 
       <p style={{ fontSize: 11, color: '#bbb', marginTop: 12, lineHeight: 1.5 }}>

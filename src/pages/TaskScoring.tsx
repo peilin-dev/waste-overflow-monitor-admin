@@ -88,7 +88,8 @@ export default function TaskScoring() {
           </div>
         </div>
 
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', minWidth: 680, borderCollapse: 'collapse' }}>
           <thead>
             <tr>
               {['Employee', 'Task Location', 'Completed', 'Rating', 'Comment', 'Action'].map(h => (
@@ -224,6 +225,7 @@ export default function TaskScoring() {
             })}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   )

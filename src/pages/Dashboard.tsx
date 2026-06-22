@@ -65,9 +65,11 @@ function MonitorGrid({ blocks, allBins }: { blocks: Block[]; allBins: Bin[] }) {
       borderRadius: 9, padding: 18, border: '1px solid #e0e0e0', marginTop: 14,
     }}>
       {/* Title */}
-      <div style={{ position: 'relative', textAlign: 'center', fontSize: 15, fontWeight: 700, color: '#1f2c3a', marginBottom: 14, letterSpacing: '.06em' }}>
-        SMART WASTE OVERFLOW MONITORING SYSTEM
-        <span style={{ position: 'absolute', right: 0, top: 2, fontSize: 10.5, fontWeight: 500, color: '#aab7b8', letterSpacing: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'baseline', justifyContent: 'center', gap: '4px 12px', marginBottom: 14 }}>
+        <span style={{ fontSize: 15, fontWeight: 700, color: '#1f2c3a', letterSpacing: '.06em', textAlign: 'center' }}>
+          SMART WASTE OVERFLOW MONITORING SYSTEM
+        </span>
+        <span style={{ fontSize: 10.5, fontWeight: 500, color: '#aab7b8', display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}>
           🕘 {stamp}
         </span>
       </div>
@@ -76,7 +78,8 @@ function MonitorGrid({ blocks, allBins }: { blocks: Block[]; allBins: Bin[] }) {
       {blocks.length === 0 ? (
         <div style={{ textAlign: 'center', color: '#aab7b8', padding: 32, fontSize: 13 }}>No blocks configured</div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${blocks.length}, 1fr)`, gap: 10 }}>
+        <div style={{ overflowX: 'auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${blocks.length}, minmax(160px, 1fr))`, gap: 10 }}>
           {blocks.map(block => {
             const blockBins = allBins.filter(b => b.block_id === block.id)
             return (
@@ -113,10 +116,11 @@ function MonitorGrid({ blocks, allBins }: { blocks: Block[]; allBins: Bin[] }) {
             )
           })}
         </div>
+        </div>
       )}
 
       {/* Footer: summary + alerts */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1.5fr', gap: 10, marginTop: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10, marginTop: 14 }}>
         <div style={{ background: '#fff', border: '1px solid #d6dde4', borderRadius: 6, padding: '10px 14px' }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: '#1f2c3a', marginBottom: 7, letterSpacing: '.04em' }}>System Summary</div>
           {[
@@ -201,7 +205,7 @@ export default function Dashboard() {
     <div style={{ fontFamily: '"Helvetica Neue",Helvetica,Arial,sans-serif' }}>
 
       {/* Stat cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 14 }}>
         {statCards.map(({ label, value, color, sub }) => (
           <div key={label} style={{ background: '#fff', border: '1px solid #e0e0e0', borderRadius: 7, padding: '16px 18px' }}>
             <div style={{ fontSize: 11, color: '#999', fontWeight: 500 }}>{label}</div>

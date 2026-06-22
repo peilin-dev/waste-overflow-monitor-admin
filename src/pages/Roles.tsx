@@ -99,14 +99,14 @@ export default function Roles() {
     <div style={{ fontFamily: '"Helvetica Neue",Helvetica,Arial,sans-serif' }}>
 
       {/* Stats cards */}
-      <div style={{ display: 'flex', gap: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 14 }}>
         {[
           { label: 'Total System Roles',       value: totalRoles,    color: '#333' },
           { label: 'Highest Permission Roles',  value: highPermRoles, color: '#5ca85c' },
           { label: 'Unassigned Roles',          value: unassignedRoles, color: '#999' },
           { label: 'Role-based Employees',      value: totalEmployees, color: '#333' },
         ].map(({ label, value, color }) => (
-          <div key={label} style={{ flex: 1, background: '#fff', border: '1px solid #e0e0e0', borderRadius: 7, padding: '14px 15px' }}>
+          <div key={label} style={{ background: '#fff', border: '1px solid #e0e0e0', borderRadius: 7, padding: '14px 15px' }}>
             <div style={{ fontSize: 11, color: '#999' }}>{label}</div>
             <div style={{ fontSize: 24, fontWeight: 700, marginTop: 7, color }}>{value}</div>
           </div>
@@ -128,7 +128,8 @@ export default function Roles() {
           </button>
         </div>
 
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', minWidth: 750, borderCollapse: 'collapse' }}>
           <thead>
             <tr>
               {['Role Name', 'Description', 'Access Level', 'Assigned Users', 'Permissions Count', 'Status', 'Actions'].map(h => (
@@ -220,6 +221,7 @@ export default function Roles() {
             })}
           </tbody>
         </table>
+        </div>
       </div>
 
       <p style={{ fontSize: 11, color: '#bbb', marginTop: 12, lineHeight: 1.5 }}>

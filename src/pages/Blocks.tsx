@@ -95,7 +95,7 @@ export default function Blocks() {
         <div style={{ fontSize: 13, fontWeight: 600, color: '#5b9bd5', padding: '12px 16px', borderBottom: '1px solid #ededed' }}>
           1. Project General Settings
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 18, padding: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 18, padding: 16 }}>
           <div>
             <label style={{ display: 'block', fontSize: 11.5, color: '#666', fontWeight: 500, marginBottom: 5 }}>System Title</label>
             <input style={{ ...inputStyle, background: '#f7f8fa', color: '#999', cursor: 'not-allowed' }}
@@ -115,7 +115,8 @@ export default function Blocks() {
           2. Block &amp; Floor Layout Configuration
         </div>
 
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', minWidth: 480, borderCollapse: 'collapse' }}>
           <thead>
             <tr>
               {['Block Name', 'Total Floors per Block', 'Bins per Floor', 'Actions'].map(h => (
@@ -161,6 +162,7 @@ export default function Blocks() {
             })}
           </tbody>
         </table>
+        </div>
 
         <div style={{ padding: '12px 16px', borderTop: '1px solid #ededed', display: 'flex', alignItems: 'center', gap: 14 }}>
           <button onClick={handleAdd} style={{

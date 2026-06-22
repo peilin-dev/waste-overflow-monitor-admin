@@ -96,14 +96,14 @@ export default function WorkStatus() {
     <div style={{ fontFamily: '"Helvetica Neue",Helvetica,Arial,sans-serif' }}>
 
       {/* Stats */}
-      <div style={{ display: 'flex', gap: 14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 14 }}>
         {[
           { label: 'Total Cleaners',         value: total,          color: '#333' },
           { label: 'On Duty Now',             value: onDuty,         color: '#5ca85c' },
           { label: 'Tasks Completed Today',   value: tasksDoneToday, color: '#333' },
           { label: 'Active Accounts',         value: active,         color: '#4a90d9' },
         ].map(({ label, value, color }) => (
-          <div key={label} style={{ flex: 1, background: '#fff', border: '1px solid #e0e0e0', borderRadius: 7, padding: '14px 15px' }}>
+          <div key={label} style={{ background: '#fff', border: '1px solid #e0e0e0', borderRadius: 7, padding: '14px 15px' }}>
             <div style={{ fontSize: 11, color: '#999' }}>{label}</div>
             <div style={{ fontSize: 24, fontWeight: 700, marginTop: 7, color }}>{value}</div>
           </div>
@@ -123,7 +123,8 @@ export default function WorkStatus() {
           </span>
         </div>
 
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div style={{ overflowX: 'auto' }}>
+        <table style={{ width: '100%', minWidth: 750, borderCollapse: 'collapse' }}>
           <thead>
             <tr>
               {['Employee', 'Status', 'Current Task', 'Zone', 'Shift', 'Tasks Done Today', 'Last Seen'].map(h => (
@@ -172,6 +173,7 @@ export default function WorkStatus() {
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   )
