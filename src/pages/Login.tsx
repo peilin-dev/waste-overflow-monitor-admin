@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Form, Input, Button, message } from 'antd'
 import { UserOutlined, LockOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
@@ -8,6 +9,13 @@ export default function Login() {
   const navigate = useNavigate()
   const { setToken, setUser } = useAuthStore()
   const [form] = Form.useForm()
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
+
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
 
   const onFinish = async (values: { username: string; password: string }) => {
     try {
@@ -25,6 +33,7 @@ export default function Login() {
     <div style={{
       height: '100vh', width: '100vw', position: 'relative', overflow: 'hidden',
       fontFamily: '"Helvetica Neue",Helvetica,Arial,sans-serif',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
       {/* Background */}
       <div style={{
@@ -37,44 +46,62 @@ export default function Login() {
         backgroundSize: '60px 60px',
       }} />
 
-      {/* Left branding */}
-      <div style={{
-        position: 'absolute', left: '8%', top: '50%', transform: 'translateY(-50%)',
-        color: '#fff', maxWidth: 380,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
-          <div style={{ width: 48, height: 48, background: 'rgba(255,255,255,0.15)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>
-          </div>
-          <div>
-            <div style={{ fontSize: 22, fontWeight: 700, lineHeight: 1.2 }}>WasteMonitor</div>
-            <div style={{ fontSize: 11, opacity: 0.7, marginTop: 2 }}>Admin Console</div>
-          </div>
-        </div>
-
-        <h2 style={{ fontSize: 30, fontWeight: 700, margin: '0 0 12px', lineHeight: 1.3 }}>
-          Smart Community<br />Waste Management
-        </h2>
-        <p style={{ fontSize: 13.5, opacity: 0.8, lineHeight: 1.7, margin: '0 0 32px' }}>
-          Monitor overflow incidents, dispatch cleaners,<br />and keep your community clean and efficient.
-        </p>
-
-        <div style={{ display: 'flex', gap: 24 }}>
-          {[{ num: '5', label: 'Blocks' }, { num: '50+', label: 'Bins' }, { num: '24/7', label: 'Monitoring' }].map(s => (
-            <div key={s.label}>
-              <div style={{ fontSize: 22, fontWeight: 700 }}>{s.num}</div>
-              <div style={{ fontSize: 11, opacity: 0.7 }}>{s.label}</div>
+      {/* Left branding — desktop only */}
+      {!isMobile && (
+        <div style={{
+          position: 'absolute', left: '8%', top: '50%', transform: 'translateY(-50%)',
+          color: '#fff', maxWidth: 380,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 28 }}>
+            <div style={{ width: 48, height: 48, background: 'rgba(255,255,255,0.15)', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>
             </div>
-          ))}
+            <div>
+              <div style={{ fontSize: 22, fontWeight: 700, lineHeight: 1.2 }}>WasteMonitor</div>
+              <div style={{ fontSize: 11, opacity: 0.7, marginTop: 2 }}>Admin Console</div>
+            </div>
+          </div>
+          <h2 style={{ fontSize: 30, fontWeight: 700, margin: '0 0 12px', lineHeight: 1.3 }}>
+            Smart Community<br />Waste Management
+          </h2>
+          <p style={{ fontSize: 13.5, opacity: 0.8, lineHeight: 1.7, margin: '0 0 32px' }}>
+            Monitor overflow incidents, dispatch cleaners,<br />and keep your community clean and efficient.
+          </p>
+          <div style={{ display: 'flex', gap: 24 }}>
+            {[{ num: '5', label: 'Blocks' }, { num: '50+', label: 'Bins' }, { num: '24/7', label: 'Monitoring' }].map(s => (
+              <div key={s.label}>
+                <div style={{ fontSize: 22, fontWeight: 700 }}>{s.num}</div>
+                <div style={{ fontSize: 11, opacity: 0.7 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Login card */}
       <div style={{
-        position: 'absolute', right: '8%', top: '50%', transform: 'translateY(-50%)',
-        width: 360, background: 'rgba(255,255,255,0.95)', borderRadius: 14,
-        padding: '36px 36px 28px', boxShadow: '0 24px 60px rgba(0,0,0,0.25)',
+        position: 'relative', zIndex: 1,
+        ...(isMobile
+          ? { width: '90%', maxWidth: 400, margin: '0 auto' }
+          : { position: 'absolute', right: '8%', top: '50%', transform: 'translateY(-50%)', width: 360 }
+        ),
+        background: 'rgba(255,255,255,0.95)', borderRadius: 14,
+        padding: isMobile ? '32px 24px 24px' : '36px 36px 28px',
+        boxShadow: '0 24px 60px rgba(0,0,0,0.25)',
       }}>
+        {/* Mobile logo */}
+        {isMobile && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24, justifyContent: 'center' }}>
+            <div style={{ width: 36, height: 36, background: '#4a90d9', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>
+            </div>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 700, lineHeight: 1.2, color: '#1a2a4a' }}>WasteMonitor</div>
+              <div style={{ fontSize: 10, color: '#999' }}>Admin Console</div>
+            </div>
+          </div>
+        )}
+
         <h3 style={{ fontSize: 19, fontWeight: 700, color: '#1a2a4a', margin: '0 0 4px' }}>Sign in</h3>
         <p style={{ fontSize: 12, color: '#888', margin: '0 0 24px' }}>Authorized personnel only</p>
 

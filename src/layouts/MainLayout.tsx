@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { Modal, Input, message } from 'antd'
+import { Drawer, Modal, Input, message } from 'antd'
 import { useAuthStore } from '@/store/authStore'
 import { changePassword } from '@/api'
 
@@ -48,6 +48,14 @@ export default function MainLayout() {
   const [oldPw, setOldPw] = useState('')
   const [newPw, setNewPw] = useState('')
   const [pwLoading, setPwLoading] = useState(false)
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
+  const [drawerOpen, setDrawerOpen] = useState(false)
+
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
 
   const handleChangePassword = async () => {
     if (!oldPw || !newPw) { message.warning('Please fill in both fields'); return }
@@ -69,7 +77,7 @@ export default function MainLayout() {
   const NavItem = ({ item }: { item: typeof NAV_MAIN[0] }) => {
     const active = location.pathname === item.key
     return (
-      <div onClick={() => navigate(item.key)} style={{
+      <div onClick={() => { navigate(item.key); setDrawerOpen(false) }} style={{
         display: 'flex', alignItems: 'center', gap: 10, padding: '9px 11px',
         borderRadius: 6, fontSize: 12.5, cursor: 'pointer', marginBottom: 2,
         fontWeight: active ? 600 : 500,
@@ -86,65 +94,95 @@ export default function MainLayout() {
     )
   }
 
+  const sidebarContent = (
+    <>
+      {/* Logo */}
+      <div style={{ padding: '18px 18px 16px', borderBottom: '1px solid #ededed', display: 'flex', alignItems: 'center', gap: 9 }}>
+        <div style={{ width: 30, height: 30, borderRadius: 7, background: '#4a90d9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>
+        </div>
+        <div>
+          <b style={{ fontSize: 12.5, fontWeight: 700, display: 'block', lineHeight: 1.2 }}>WasteMonitor</b>
+          <span style={{ fontSize: 9.5, color: '#999' }}>Admin Console</span>
+        </div>
+      </div>
+      {/* Nav */}
+      <nav style={{ padding: '14px 12px', flex: 1, overflowY: 'auto' }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: '#999', letterSpacing: '0.06em', textTransform: 'uppercase', margin: '0 8px 8px' }}>Main</div>
+        {NAV_MAIN.map(item => <NavItem key={item.key} item={item} />)}
+        <div style={{ fontSize: 10, fontWeight: 700, color: '#999', letterSpacing: '0.06em', textTransform: 'uppercase', margin: '14px 8px 8px' }}>System</div>
+        {NAV_SYSTEM.map(item => <NavItem key={item.key} item={item} />)}
+      </nav>
+      <div style={{ padding: '14px 18px', borderTop: '1px solid #ededed', fontSize: 10.5, color: '#999' }}>
+        Admin Portal · v1.0
+      </div>
+    </>
+  )
+
+  const current = [...NAV_MAIN, ...NAV_SYSTEM].find(n => n.key === location.pathname)
+
   return (
     <div style={{ display: 'flex', height: '100vh', fontFamily: '"Helvetica Neue",Helvetica,Arial,"Segoe UI",sans-serif', fontSize: 13 }}>
-      {/* Sidebar */}
-      <aside style={{ width: 220, background: '#fff', borderRight: '1px solid #e0e0e0', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
-        {/* Logo */}
-        <div style={{ padding: '18px 18px 16px', borderBottom: '1px solid #ededed', display: 'flex', alignItems: 'center', gap: 9 }}>
-          <div style={{ width: 30, height: 30, borderRadius: 7, background: '#4a90d9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>
-          </div>
-          <div>
-            <b style={{ fontSize: 12.5, fontWeight: 700, display: 'block', lineHeight: 1.2 }}>WasteMonitor</b>
-            <span style={{ fontSize: 9.5, color: '#999' }}>Admin Console</span>
-          </div>
-        </div>
+      {/* Sidebar — desktop only */}
+      {!isMobile && (
+        <aside style={{ width: 220, background: '#fff', borderRight: '1px solid #e0e0e0', display: 'flex', flexDirection: 'column', flexShrink: 0 }}>
+          {sidebarContent}
+        </aside>
+      )}
 
-        {/* Nav */}
-        <nav style={{ padding: '14px 12px', flex: 1, overflowY: 'auto' }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: '#999', letterSpacing: '0.06em', textTransform: 'uppercase', margin: '0 8px 8px' }}>Main</div>
-          {NAV_MAIN.map(item => <NavItem key={item.key} item={item} />)}
-          <div style={{ fontSize: 10, fontWeight: 700, color: '#999', letterSpacing: '0.06em', textTransform: 'uppercase', margin: '14px 8px 8px' }}>System</div>
-          {NAV_SYSTEM.map(item => <NavItem key={item.key} item={item} />)}
-        </nav>
-
-        <div style={{ padding: '14px 18px', borderTop: '1px solid #ededed', fontSize: 10.5, color: '#999' }}>
-          Admin Portal · v1.0
-        </div>
-      </aside>
+      {/* Sidebar — mobile drawer */}
+      {isMobile && (
+        <Drawer
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          placement="left"
+          width={220}
+          title={null}
+          closable={false}
+          styles={{ body: { padding: 0, display: 'flex', flexDirection: 'column', height: '100%' } }}
+        >
+          {sidebarContent}
+        </Drawer>
+      )}
 
       {/* Main */}
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* Topbar */}
-        <header style={{ height: 54, background: '#fff', borderBottom: '1px solid #e0e0e0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 22px', flexShrink: 0 }}>
-          <div>
-            {(() => {
-              const current = [...NAV_MAIN, ...NAV_SYSTEM].find(n => n.key === location.pathname)
-              return (
-                <>
-                  <div style={{ fontSize: 15, fontWeight: 600 }}>{current?.label || 'Dashboard'}</div>
-                  {current?.sub && <div style={{ fontSize: 11, color: '#999', marginTop: 1 }}>{current.sub}</div>}
-                </>
-              )
-            })()}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-            <div style={{ width: 32, height: 32, border: '1px solid #e0e0e0', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666', cursor: 'pointer' }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+        <header style={{ height: 54, background: '#fff', borderBottom: '1px solid #e0e0e0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 14px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {/* Hamburger — mobile only */}
+            {isMobile && (
+              <div onClick={() => setDrawerOpen(true)} style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#555', flexShrink: 0 }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+              </div>
+            )}
+            <div>
+              <div style={{ fontSize: isMobile ? 13 : 15, fontWeight: 600 }}>{current?.label || 'Dashboard'}</div>
+              {!isMobile && current?.sub && <div style={{ fontSize: 11, color: '#999', marginTop: 1 }}>{current.sub}</div>}
             </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 8 : 14 }}>
+            {!isMobile && (
+              <div style={{ width: 32, height: 32, border: '1px solid #e0e0e0', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666', cursor: 'pointer' }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+              </div>
+            )}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ width: 32, height: 32, borderRadius: 6, background: '#4a90d9', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 6, background: '#4a90d9', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>
                 {initials}
               </div>
-              <div>
-                <b style={{ fontSize: 12, display: 'block', lineHeight: 1.2 }}>{user?.name || user?.username}</b>
-                <span style={{ fontSize: 10, color: '#999' }}>Administrator</span>
+              {!isMobile && (
+                <div>
+                  <b style={{ fontSize: 12, display: 'block', lineHeight: 1.2 }}>{user?.name || user?.username}</b>
+                  <span style={{ fontSize: 10, color: '#999' }}>Administrator</span>
+                </div>
+              )}
+            </div>
+            {!isMobile && (
+              <div onClick={() => setPwModal(true)} style={{ cursor: 'pointer', color: '#666', fontSize: 12, fontWeight: 500 }}>
+                Change Password
               </div>
-            </div>
-            <div onClick={() => setPwModal(true)} style={{ cursor: 'pointer', color: '#666', fontSize: 12, fontWeight: 500 }}>
-              Change Password
-            </div>
+            )}
             <div onClick={() => { logout(); navigate('/login') }} style={{ cursor: 'pointer', color: '#d9534f', fontSize: 12, fontWeight: 500 }}>
               Logout
             </div>
@@ -152,7 +190,7 @@ export default function MainLayout() {
         </header>
 
         {/* Content */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 22px', background: '#f4f5f7' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: isMobile ? '14px 12px' : '20px 22px', background: '#f4f5f7' }}>
           <Outlet />
         </div>
       </main>
