@@ -4,7 +4,10 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-RUN npm run build && echo "=== dist contents ===" && ls -la /app/dist/ && (test -f /app/dist/index.html && echo "✓ index.html EXISTS" || (echo "✗ index.html MISSING" && exit 1))
+# Rename app/ so Vite 8 cannot auto-discover app/index.html as an entry point
+RUN mv app _app_static && npm run build && mv _app_static app \
+    && echo "=== dist contents ===" && ls -la /app/dist/ \
+    && (test -f /app/dist/index.html && echo "✓ index.html EXISTS" || (echo "✗ index.html MISSING" && exit 1))
 
 FROM nginx:alpine
 
