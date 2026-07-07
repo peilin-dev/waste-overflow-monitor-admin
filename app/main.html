@@ -177,18 +177,19 @@ function updateClockUI(rec) {
     const btnTime  = document.getElementById('clock-btn-time');
     btnTime.textContent = new Date().toLocaleTimeString('en-US',
         { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+    const clockBtn = document.getElementById('clock-btn');
     if (!rec) {
         btnLabel.textContent = 'Clock In';
-        document.getElementById('clock-btn').style.background =
-            'linear-gradient(135deg,#60A5FA,#2563EB)';
+        clockBtn.style.background = 'linear-gradient(135deg,#60A5FA,#2563EB)';
+        clockBtn.disabled = false;
     } else if (!rec.clock_out) {
         btnLabel.textContent = 'Clock Out';
-        document.getElementById('clock-btn').style.background =
-            'linear-gradient(135deg,#34D399,#059669)';
+        clockBtn.style.background = 'linear-gradient(135deg,#34D399,#059669)';
+        clockBtn.disabled = false;
     } else {
         btnLabel.textContent = 'Done';
-        document.getElementById('clock-btn').style.background = '#94A3B8';
-        document.getElementById('clock-btn').disabled = true;
+        clockBtn.style.background = '#94A3B8';
+        clockBtn.disabled = true;
     }
 }
 
