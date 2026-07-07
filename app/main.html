@@ -399,7 +399,7 @@ async function loadKpi() {
                 <div style="font-size:13px;margin-top:4px;">${stars}</div>
             </div>
             <h3 style="font-size:16px;font-weight:700;color:var(--text-dark);">
-                ${p.average_rating >= 4.5 ? 'Excellent Work!' : p.average_rating >= 3.5 ? 'Good Work!' : 'Keep it up!'}
+                ${!p.average_rating ? 'No ratings yet' : p.average_rating >= 4.5 ? 'Excellent Work!' : p.average_rating >= 3.5 ? 'Good Work!' : 'Keep it up!'}
             </h3>
             <div class="stats-grid">
                 <div class="stat-box">
@@ -520,6 +520,14 @@ setInterval(() => {
     if (!ME) { ME = await getMe().catch(() => null); }
     const blocks = await getBlocks().catch(() => []);
     blocks.forEach(b => { blockMap[b.id] = b.name; });
+
+    // Show Admin tab only for admins; hide KPI tab for admins (not relevant)
+    if (ME?.role !== 'admin') {
+        document.getElementById('nav-admin').style.display = 'none';
+    } else {
+        document.getElementById('nav-kpi').style.display = 'none';
+    }
+
     await loadClock();
 })();
 </script>
