@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SWOMS</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div class="mobile-frame">
+    <div class="status-bar">
+        <span id="sb-time">09:41</span>
+        <div style="display:flex;gap:5px">
+            <i class="fa-solid fa-signal"></i>
+            <i class="fa-solid fa-wifi"></i>
+            <i class="fa-solid fa-battery-full"></i>
+        </div>
+    </div>
+
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:28px 22px;">
+        <div style="text-align:center;margin-bottom:36px;">
+            <div style="width:68px;height:68px;background:var(--pale-blue);border-radius:18px;
+                        display:flex;align-items:center;justify-content:center;margin:0 auto 14px;">
+                <i class="fa-solid fa-trash-can" style="font-size:30px;color:var(--primary-blue)"></i>
+            </div>
+            <h1 style="font-size:22px;font-weight:700;color:var(--text-dark);margin-bottom:4px;">SWOMS</h1>
+            <p style="color:var(--text-gray);font-size:13px;">Smart Waste Overflow Monitoring</p>
+        </div>
+
+        <div id="err" style="display:none;background:#FEE2E2;color:#DC2626;
+             padding:10px 14px;border-radius:10px;font-size:13px;margin-bottom:14px;"></div>
+
+        <div class="form-group">
+            <label>Username</label>
+            <input type="text" id="username" placeholder="Enter username" autocomplete="username">
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="password" placeholder="Enter password" autocomplete="current-password">
+        </div>
+        <button class="btn-primary" id="login-btn">
+            <i class="fa-solid fa-right-to-bracket"></i> Sign In
+        </button>
+    </div>
+</div>
+
+<script type="module">
+import { setToken, setUser, getToken } from './js/auth.js';
+import { login, getMe } from './js/api.js';
+
+if (getToken()) location.href = '/app/main.html';
+
+setInterval(() => {
+    document.getElementById('sb-time').textContent =
+        new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+}, 1000);
+
+const btn = document.getElementById('login-btn');
+const err = document.getElementById('err');
+
+async function doLogin() {
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    if (!username || !password) { showErr('Please fill in all fields'); return; }
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Signing in…';
+    err.style.display = 'none';
+    try {
+        const res = await login(username, password);
+        setToken(res.access_token);
+        const me = await getMe();
+        setUser(me);
+        location.href = '/app/main.html';
+    } catch (e) {
+        showErr(e.message || 'Login failed. Check your credentials.');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Sign In';
+    }
+}
+
+function showErr(msg) { err.textContent = msg; err.style.display = 'block'; }
+
+btn.addEventListener('click', doLogin);
+document.getElementById('password').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+});
+</script>
+</body>
+</html>
