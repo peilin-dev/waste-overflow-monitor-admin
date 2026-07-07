@@ -40,7 +40,12 @@ const BLOCK_SVG = (
 )
 
 function BinCell({ bin }: { bin: Bin | undefined }) {
-  if (!bin) return <div style={{ flex: 1 }} />
+  if (!bin) return (
+    <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 3, color: '#c8d0d8', fontSize: 9, fontWeight: 600, minWidth: 0 }}>
+      {BIN_SVG}
+      <span>—</span>
+    </div>
+  )
   const color = bin.current_fill >= 90 ? '#d9534f' : bin.current_fill >= 60 ? '#e89c3b' : '#5ca85c'
   return (
     <div title={`${bin.sensor_id} — ${bin.current_fill}%`} style={{

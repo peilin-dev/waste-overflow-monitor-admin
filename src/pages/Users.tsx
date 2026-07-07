@@ -1,18 +1,24 @@
 import { useCallback, useEffect, useState } from 'react'
 import { message, Popconfirm, Select, Modal, Form, Input } from 'antd'
-import type { User, UserCreate, Block } from '@/types'
+import type { User, UserCreate, Block, Role } from '@/types'
 import {
   getUsers, createUser, updateUser, deleteUser, resetPassword,
-  getBlocks, getCleanerBlocks, assignBlock, removeBlock,
+  getBlocks, getCleanerBlocks, assignBlock, removeBlock, getRoles,
 } from '@/api'
 
-const roleColor = { admin: '#4a90d9', cleaner: '#5ca85c' }
+const roleColorMap: Record<string, string> = { admin: '#4a90d9', cleaner: '#5ca85c' }
+const getRoleColor = (role: string) => roleColorMap[role.toLowerCase()] ?? '#8e69c9'
+const getRoleBg = (role: string) => {
+  const m: Record<string, string> = { admin: '#eaf2fb', cleaner: '#e9f3e9' }
+  return m[role.toLowerCase()] ?? '#f0ebfa'
+}
 const statusColor = { active: '#5ca85c', inactive: '#999' }
 const shiftOptions = ['morning', 'evening', 'night']
 
 export default function Users() {
   const [users, setUsers] = useState<User[]>([])
   const [blocks, setBlocks] = useState<Block[]>([])
+  const [roles, setRoles] = useState<Role[]>([])
   const [assignments, setAssignments] = useState<Record<number, number[]>>({})
   const [loading, setLoading] = useState(true)
   const [roleFilter, setRoleFilter] = useState<string>('all')
@@ -24,9 +30,10 @@ export default function Users() {
   const load = useCallback(async () => {
     try {
       const params = roleFilter !== 'all' ? { role: roleFilter } : {}
-      const [usersRes, blocksRes] = await Promise.all([getUsers(params), getBlocks()])
+      const [usersRes, blocksRes, rolesRes] = await Promise.all([getUsers(params), getBlocks(), getRoles()])
       setUsers(usersRes.data)
       setBlocks(blocksRes.data)
+      setRoles(rolesRes.data.filter(r => r.status === 'active'))
 
       const cleaners = usersRes.data.filter(u => u.role === 'cleaner')
       const map: Record<number, number[]> = {}
@@ -177,8 +184,8 @@ export default function Users() {
                 <td style={{ padding: '11px 16px', borderBottom: '1px solid #ededed' }}>
                   <span style={{
                     fontSize: 10.5, fontWeight: 600, padding: '3px 9px', borderRadius: 11,
-                    background: user.role === 'admin' ? '#eaf2fb' : '#e9f3e9',
-                    color: roleColor[user.role],
+                    background: getRoleBg(user.role),
+                    color: getRoleColor(user.role),
                   }}>{user.role}</span>
                 </td>
                 <td style={{ padding: '11px 16px', borderBottom: '1px solid #ededed', fontSize: 12, color: '#666' }}>{user.zone || '—'}</td>
@@ -261,8 +268,9 @@ export default function Users() {
           </Form.Item>
           <Form.Item name="role" label="Role" rules={[{ required: true }]}>
             <Select placeholder="Select role">
-              <Select.Option value="admin">Admin</Select.Option>
-              <Select.Option value="cleaner">Cleaner</Select.Option>
+              {roles.map(r => (
+                <Select.Option key={r.id} value={r.name.toLowerCase()}>{r.name}</Select.Option>
+              ))}
             </Select>
           </Form.Item>
           <Form.Item name="phone" label="Phone">

@@ -3,7 +3,7 @@ export interface User {
   id: number
   name: string
   username: string
-  role: 'admin' | 'cleaner'
+  role: string
   phone?: string
   zone?: string
   shift?: 'morning' | 'evening' | 'night' | null
@@ -15,7 +15,7 @@ export interface User {
 export interface UserCreate {
   name: string
   username: string
-  role: 'admin' | 'cleaner'
+  role: string
   password: string
   phone?: string
   zone?: string
@@ -24,7 +24,7 @@ export interface UserCreate {
 
 export interface UserUpdate {
   name?: string
-  role?: 'admin' | 'cleaner'
+  role?: string
   phone?: string
   zone?: string
   shift?: 'morning' | 'evening' | 'night'
