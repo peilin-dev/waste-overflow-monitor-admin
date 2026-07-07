@@ -279,17 +279,42 @@ window.doAccept = async (taskId, btn) => {
     btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Accepting…';
     try {
         await acceptTask(taskId);
-        btn.closest('.card').remove();
-        const el = document.getElementById('tasks-list');
-        if (!el.querySelector('.card')) {
-            el.innerHTML = '<p style="padding:30px;color:#94A3B8;text-align:center;font-size:14px;">No pending tasks 🎉</p>';
-        }
+        showToast('Task accepted! Go to Report tab to submit completion.', 'success');
+        btn.closest('.card').style.transition = 'opacity .3s';
+        btn.closest('.card').style.opacity = '0';
+        setTimeout(() => {
+            btn.closest('.card')?.remove();
+            const el = document.getElementById('tasks-list');
+            if (el && !el.querySelector('.card')) {
+                el.innerHTML = '<p style="padding:30px;color:#94A3B8;text-align:center;font-size:14px;">No pending tasks 🎉</p>';
+            }
+        }, 300);
     } catch (e) {
         btn.disabled = false;
         btn.innerHTML = '<i class="fa-solid fa-hand-pointer"></i> Accept Task';
-        alert(e.message);
+        showToast(e.message || 'Failed to accept task', 'error');
     }
 };
+
+function showToast(msg, type) {
+    const old = document.getElementById('wm-toast');
+    if (old) old.remove();
+    const t = document.createElement('div');
+    t.id = 'wm-toast';
+    t.textContent = msg;
+    Object.assign(t.style, {
+        position: 'absolute', bottom: '96px', left: '16px', right: '16px',
+        padding: '12px 16px', borderRadius: '12px', fontSize: '13px',
+        fontWeight: '600', zIndex: '999', textAlign: 'center',
+        background: type === 'success' ? '#D1FAE5' : '#FEE2E2',
+        color: type === 'success' ? '#065F46' : '#DC2626',
+        boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+        transition: 'opacity .3s',
+    });
+    document.querySelector('.mobile-frame').appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; }, 2500);
+    setTimeout(() => t.remove(), 2800);
+}
 
 // ─── Report ───────────────────────────────────────────────────────────────────
 async function loadReport() {
