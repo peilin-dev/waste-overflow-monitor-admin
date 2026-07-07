@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SWOMS</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div class="mobile-frame">
+    <div class="status-bar">
+        <span id="sb-time">09:41</span>
+        <div style="display:flex;gap:5px">
+            <i class="fa-solid fa-signal"></i>
+            <i class="fa-solid fa-wifi"></i>
+            <i class="fa-solid fa-battery-full"></i>
+        </div>
+    </div>
+
+    <div class="content-area" id="content">
+        <!-- Tab 1: Clock -->
+        <div class="page active" id="page-clock">
+            <div class="header-section">
+                <div style="display:flex;align-items:center;gap:14px;">
+                    <div style="width:46px;height:46px;background:var(--pale-blue);border-radius:12px;
+                                display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--primary-blue);">
+                        <i class="fa-solid fa-user-tie"></i>
+                    </div>
+                    <div>
+                        <div id="user-name" style="font-size:18px;font-weight:700;color:var(--text-dark);">—</div>
+                        <div id="user-zone" style="font-size:12px;color:var(--text-gray);">—</div>
+                    </div>
+                    <button onclick="doLogout()" style="margin-left:auto;background:none;border:none;
+                        color:var(--text-gray);font-size:20px;cursor:pointer;">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card" style="border:none;box-shadow:none;background:transparent;">
+                <div style="display:flex;gap:10px;margin-bottom:32px;">
+                    <div style="flex:1;background:#F8FAFC;padding:14px;border-radius:12px;border:1px solid #E2E8F0;">
+                        <div style="font-size:13px;color:var(--text-gray);margin-bottom:4px;">Clock In</div>
+                        <div id="ci-time" style="font-size:16px;font-weight:700;color:var(--text-dark);">—</div>
+                        <div id="ci-status" style="font-size:11px;color:var(--text-gray);margin-top:4px;">Not yet</div>
+                    </div>
+                    <div style="flex:1;background:#F8FAFC;padding:14px;border-radius:12px;border:1px solid #E2E8F0;">
+                        <div style="font-size:13px;color:var(--text-gray);margin-bottom:4px;">Clock Out</div>
+                        <div id="co-time" style="font-size:16px;font-weight:700;color:var(--text-dark);">—</div>
+                        <div id="co-status" style="font-size:11px;color:var(--text-gray);margin-top:4px;">Pending</div>
+                    </div>
+                </div>
+
+                <div id="clock-btn-wrap" style="display:flex;justify-content:center;margin-bottom:24px;">
+                    <button id="clock-btn" onclick="handleClock()"
+                        style="width:150px;height:150px;border-radius:50%;
+                               background:linear-gradient(135deg,#60A5FA,#2563EB);
+                               color:white;border:none;display:flex;flex-direction:column;
+                               justify-content:center;align-items:center;
+                               box-shadow:0 10px 25px rgba(59,130,246,0.4);cursor:pointer;">
+                        <div id="clock-btn-label" style="font-size:20px;font-weight:700;">Clock In</div>
+                        <div id="clock-btn-time" style="font-size:13px;opacity:0.9;margin-top:4px;">—</div>
+                    </button>
+                </div>
+
+                <div id="clock-msg" style="display:none;text-align:center;padding:10px;
+                     border-radius:10px;font-size:13px;margin-bottom:8px;"></div>
+            </div>
+        </div>
+
+        <!-- Tab 2: Tasks -->
+        <div class="page" id="page-tasks">
+            <div class="header-section">
+                <h2 style="font-size:20px;font-weight:700;color:var(--text-dark);">Task Dispatch</h2>
+                <p style="font-size:13px;color:var(--text-gray);">New alerts from sensor network</p>
+            </div>
+            <div id="tasks-list" style="padding:0 4px;"></div>
+        </div>
+
+        <!-- Tab 3: Report -->
+        <div class="page" id="page-report">
+            <div class="header-section">
+                <h2 style="font-size:20px;font-weight:700;color:var(--text-dark);">Task Report</h2>
+                <p style="font-size:13px;color:var(--text-gray);">Submit completion or issues</p>
+            </div>
+            <div id="report-content" style="padding:0 4px;"></div>
+        </div>
+
+        <!-- Tab 4: KPI -->
+        <div class="page" id="page-kpi">
+            <div class="header-section">
+                <h2 style="font-size:20px;font-weight:700;color:var(--text-dark);">My Performance</h2>
+                <p style="font-size:13px;color:var(--text-gray);">Weekly summary &amp; ratings</p>
+            </div>
+            <div id="kpi-content" style="padding:0 4px;"></div>
+        </div>
+
+        <!-- Tab 5: Admin Rate -->
+        <div class="page" id="page-admin">
+            <div class="header-section" style="background:var(--text-dark);">
+                <h2 style="font-size:20px;font-weight:700;color:white;">Admin Scoring</h2>
+                <p style="font-size:13px;color:#94A3B8;">Review completed tasks</p>
+            </div>
+            <div id="admin-list" style="padding:0 4px;"></div>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <button class="nav-btn active" id="nav-clock" onclick="switchTab('clock')">
+            <i class="fa-regular fa-clock"></i><span>Time</span>
+        </button>
+        <button class="nav-btn" id="nav-tasks" onclick="switchTab('tasks')">
+            <i class="fa-solid fa-list-check"></i><span>Tasks</span>
+        </button>
+        <button class="nav-btn" id="nav-report" onclick="switchTab('report')">
+            <i class="fa-solid fa-camera"></i><span>Report</span>
+        </button>
+        <button class="nav-btn" id="nav-kpi" onclick="switchTab('kpi')">
+            <i class="fa-solid fa-chart-simple"></i><span>My KPI</span>
+        </button>
+        <button class="nav-btn" id="nav-admin" onclick="switchTab('admin')">
+            <i class="fa-solid fa-user-shield"></i><span>Admin</span>
+        </button>
+    </div>
+</div>
+
+<script type="module">
+import { requireAuth, getUser, logout } from './js/auth.js';
+import { getMe, getToday, clockIn, clockOut,
+         getTasks, acceptTask, reportTask, rateTask,
+         getPerformance, uploadFile, getBlocks } from './js/api.js';
+
+requireAuth();
+
+// ─── Globals ────────────────────────────────────────────────────────────────
+let ME = getUser();
+let blockMap = {};       // { id: name }
+let uploadedPhotos = []; // URLs collected before submit
+let selectedRatings = {}; // { taskId: stars }
+
+// ─── Nav ────────────────────────────────────────────────────────────────────
+window.switchTab = async (tab) => {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('page-' + tab).classList.add('active');
+    document.getElementById('nav-' + tab).classList.add('active');
+    if (tab === 'clock')  await loadClock();
+    if (tab === 'tasks')  await loadTasks();
+    if (tab === 'report') await loadReport();
+    if (tab === 'kpi')    await loadKpi();
+    if (tab === 'admin')  await loadAdmin();
+};
+
+window.doLogout = () => logout();
+
+// ─── Clock ───────────────────────────────────────────────────────────────────
+async function loadClock() {
+    if (ME) {
+        document.getElementById('user-name').textContent = ME.name;
+        document.getElementById('user-zone').textContent =
+            (ME.zone || 'No zone') + ' · SWOMS';
+    }
+    const rec = await getToday().catch(() => null);
+    updateClockUI(rec);
+}
+
+function updateClockUI(rec) {
+    const fmt = dt => dt ? new Date(dt).toLocaleTimeString('en-US',
+        { hour: '2-digit', minute: '2-digit', hour12: false }) : '—';
+    document.getElementById('ci-time').textContent = fmt(rec?.clock_in);
+    document.getElementById('co-time').textContent = fmt(rec?.clock_out);
+    document.getElementById('ci-status').textContent =
+        rec?.clock_in ? '✓ Done' : 'Not yet';
+    document.getElementById('co-status').textContent =
+        rec?.clock_out ? '✓ Done' : 'Pending';
+    const btnLabel = document.getElementById('clock-btn-label');
+    const btnTime  = document.getElementById('clock-btn-time');
+    btnTime.textContent = new Date().toLocaleTimeString('en-US',
+        { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+    if (!rec) {
+        btnLabel.textContent = 'Clock In';
+        document.getElementById('clock-btn').style.background =
+            'linear-gradient(135deg,#60A5FA,#2563EB)';
+    } else if (!rec.clock_out) {
+        btnLabel.textContent = 'Clock Out';
+        document.getElementById('clock-btn').style.background =
+            'linear-gradient(135deg,#34D399,#059669)';
+    } else {
+        btnLabel.textContent = 'Done';
+        document.getElementById('clock-btn').style.background = '#94A3B8';
+        document.getElementById('clock-btn').disabled = true;
+    }
+}
+
+window.handleClock = async () => {
+    const btn = document.getElementById('clock-btn');
+    const msg = document.getElementById('clock-msg');
+    btn.disabled = true;
+    msg.style.display = 'none';
+    try {
+        const rec = await getToday();
+        let updated;
+        if (!rec) {
+            updated = await clockIn();
+            showClockMsg('Clocked in successfully!', 'success');
+        } else if (!rec.clock_out) {
+            updated = await clockOut();
+            showClockMsg('Clocked out successfully!', 'success');
+        }
+        if (updated) updateClockUI(updated);
+    } catch (e) {
+        showClockMsg(e.message || 'Error', 'error');
+        btn.disabled = false;
+    }
+};
+
+function showClockMsg(text, type) {
+    const el = document.getElementById('clock-msg');
+    el.textContent = text;
+    el.style.background = type === 'success' ? '#D1FAE5' : '#FEE2E2';
+    el.style.color = type === 'success' ? '#065F46' : '#DC2626';
+    el.style.display = 'block';
+    setTimeout(() => { el.style.display = 'none'; }, 3000);
+}
+
+// ─── Tasks ───────────────────────────────────────────────────────────────────
+async function loadTasks() {
+    const el = document.getElementById('tasks-list');
+    el.innerHTML = '<p style="padding:20px;color:#94A3B8;text-align:center">Loading…</p>';
+    try {
+        const tasks = await getTasks({ status: 'pending' });
+        if (!tasks.length) {
+            el.innerHTML = '<p style="padding:30px;color:#94A3B8;text-align:center;font-size:14px;">No pending tasks 🎉</p>';
+            return;
+        }
+        el.innerHTML = tasks.map(t => {
+            const bin = t.bin || {};
+            const fill = bin.current_fill ?? 0;
+            const blockName = blockMap[bin.block_id] || `Block #${bin.block_id}`;
+            const isUrgent = fill >= 90;
+            const color = fill >= 90 ? 'var(--danger-red)' : fill >= 60 ? 'var(--warning-orange)' : 'var(--success-green)';
+            return `
+            <div class="card">
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+                    <div style="width:42px;height:42px;border-radius:12px;display:flex;align-items:center;
+                                justify-content:center;font-size:18px;
+                                background:${isUrgent ? '#FEE2E2' : '#FEF3C7'};
+                                color:${color};">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </div>
+                    <div style="flex:1;">
+                        <div style="font-weight:700;font-size:14px;color:var(--text-dark);">
+                            ${blockName} · Floor ${bin.floor ?? '?'} · Bin ${bin.bin_number ?? '?'}
+                        </div>
+                        <div style="font-size:12px;color:var(--text-gray);">Sensor: ${bin.sensor_id || '—'}</div>
+                    </div>
+                    ${isUrgent ? '<span class="badge" style="background:#FEE2E2;color:var(--danger-red);">URGENT</span>' : ''}
+                </div>
+                <div class="bar-bg">
+                    <div class="bar-fill" style="width:${fill}%;background:${color};"></div>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:12px;
+                            font-weight:600;color:var(--text-dark);margin-bottom:12px;">
+                    <span>Fill Level</span><span>${fill}%</span>
+                </div>
+                <button class="btn-primary" onclick="doAccept(${t.id}, this)">
+                    <i class="fa-solid fa-hand-pointer"></i> Accept Task
+                </button>
+            </div>`;
+        }).join('');
+    } catch (e) {
+        el.innerHTML = `<p style="padding:20px;color:var(--danger-red);text-align:center">${e.message}</p>`;
+    }
+}
+
+window.doAccept = async (taskId, btn) => {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Accepting…';
+    try {
+        await acceptTask(taskId);
+        btn.closest('.card').remove();
+        const el = document.getElementById('tasks-list');
+        if (!el.querySelector('.card')) {
+            el.innerHTML = '<p style="padding:30px;color:#94A3B8;text-align:center;font-size:14px;">No pending tasks 🎉</p>';
+        }
+    } catch (e) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-hand-pointer"></i> Accept Task';
+        alert(e.message);
+    }
+};
+
+// ─── Report ───────────────────────────────────────────────────────────────────
+async function loadReport() {
+    uploadedPhotos = [];
+    const el = document.getElementById('report-content');
+    el.innerHTML = '<p style="padding:20px;color:#94A3B8;text-align:center">Loading…</p>';
+    try {
+        const tasks = ME ? await getTasks({ status: 'in_progress', cleaner_id: ME.id }) : [];
+        if (!tasks.length) {
+            el.innerHTML = '<div class="card" style="text-align:center;padding:24px;color:var(--text-gray);font-size:14px;">No active tasks.<br>Accept a task first.</div>';
+            return;
+        }
+        const options = tasks.map(t => {
+            const bin = t.bin || {};
+            const blockName = blockMap[bin.block_id] || `Block #${bin.block_id}`;
+            return `<option value="${t.id}">${blockName} · Floor ${bin.floor} · Bin ${bin.bin_number}</option>`;
+        }).join('');
+        el.innerHTML = `
+        <div class="card">
+            <div class="form-group">
+                <label>Select Active Task</label>
+                <select id="report-task-sel">${options}</select>
+            </div>
+            <div class="form-group">
+                <label>Result</label>
+                <select id="report-result">
+                    <option value="cleaned">Successfully Emptied</option>
+                    <option value="damaged">Bin Damaged / Needs Repair</option>
+                    <option value="false_alarm">False Alarm</option>
+                    <option value="unable">Unable to Complete</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Photos (optional)</label>
+                <div class="upload-area" onclick="document.getElementById('photo-input').click()">
+                    <i class="fa-solid fa-camera" style="font-size:22px;color:var(--primary-blue);"></i>
+                    <span style="font-size:13px;">Tap to upload photo</span>
+                </div>
+                <input type="file" id="photo-input" accept="image/*" style="display:none" multiple>
+                <div id="photo-preview" class="photo-row"></div>
+            </div>
+            <div id="report-msg" style="display:none;padding:10px;border-radius:10px;
+                 font-size:13px;margin-bottom:8px;"></div>
+            <button class="btn-primary btn-success" id="report-submit-btn" onclick="doReport()">
+                <i class="fa-solid fa-paper-plane"></i> Submit Report
+            </button>
+        </div>`;
+
+        document.getElementById('photo-input').addEventListener('change', async (e) => {
+            const preview = document.getElementById('photo-preview');
+            for (const file of e.target.files) {
+                try {
+                    const { url } = await uploadFile(file);
+                    uploadedPhotos.push(url);
+                    const img = document.createElement('img');
+                    img.src = url; img.className = 'photo-thumb';
+                    preview.appendChild(img);
+                } catch (err) { alert('Upload failed: ' + err.message); }
+            }
+        });
+    } catch (e) {
+        el.innerHTML = `<p style="padding:20px;color:var(--danger-red);text-align:center">${e.message}</p>`;
+    }
+}
+
+window.doReport = async () => {
+    const btn = document.getElementById('report-submit-btn');
+    const msg = document.getElementById('report-msg');
+    const taskId = parseInt(document.getElementById('report-task-sel').value);
+    const result = document.getElementById('report-result').value;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting…';
+    msg.style.display = 'none';
+    try {
+        await reportTask(taskId, result, uploadedPhotos);
+        msg.textContent = 'Report submitted!';
+        msg.style.background = '#D1FAE5'; msg.style.color = '#065F46';
+        msg.style.display = 'block';
+        setTimeout(() => loadReport(), 1500);
+    } catch (e) {
+        msg.textContent = e.message || 'Submit failed';
+        msg.style.background = '#FEE2E2'; msg.style.color = '#DC2626';
+        msg.style.display = 'block';
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Submit Report';
+    }
+};
+
+// ─── KPI ─────────────────────────────────────────────────────────────────────
+async function loadKpi() {
+    const el = document.getElementById('kpi-content');
+    el.innerHTML = '<p style="padding:20px;color:#94A3B8;text-align:center">Loading…</p>';
+    if (!ME) { el.innerHTML = '<p style="padding:20px;color:var(--danger-red);text-align:center">Not logged in</p>'; return; }
+    try {
+        const p = await getPerformance(ME.id);
+        const rating = p.average_rating ? p.average_rating.toFixed(1) : '—';
+        const stars = p.average_rating
+            ? Array.from({ length: 5 }, (_, i) =>
+                `<i class="fa-${i < Math.round(p.average_rating) ? 'solid' : 'regular'} fa-star"
+                    style="color:${i < Math.round(p.average_rating) ? 'var(--warning-orange)' : '#CBD5E1'}"></i>`
+              ).join('')
+            : '—';
+        el.innerHTML = `
+        <div class="card" style="text-align:center;">
+            <div class="score-circle">
+                <div style="font-size:36px;font-weight:700;color:var(--primary-blue);line-height:1;">${rating}</div>
+                <div style="font-size:13px;margin-top:4px;">${stars}</div>
+            </div>
+            <h3 style="font-size:16px;font-weight:700;color:var(--text-dark);">
+                ${p.average_rating >= 4.5 ? 'Excellent Work!' : p.average_rating >= 3.5 ? 'Good Work!' : 'Keep it up!'}
+            </h3>
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div style="font-size:24px;font-weight:700;color:var(--text-dark);">${p.completed_tasks}</div>
+                    <div style="font-size:12px;color:var(--text-gray);margin-top:4px;">Bins Emptied</div>
+                </div>
+                <div class="stat-box">
+                    <div style="font-size:24px;font-weight:700;color:var(--success-green);">
+                        ${p.on_time_rate != null ? p.on_time_rate + '%' : '—'}
+                    </div>
+                    <div style="font-size:12px;color:var(--text-gray);margin-top:4px;">On-Time SLA</div>
+                </div>
+                <div class="stat-box">
+                    <div style="font-size:24px;font-weight:700;color:var(--primary-blue);">${p.total_tasks}</div>
+                    <div style="font-size:12px;color:var(--text-gray);margin-top:4px;">Total Tasks</div>
+                </div>
+                <div class="stat-box">
+                    <div style="font-size:24px;font-weight:700;color:var(--warning-orange);">${p.pending_tasks}</div>
+                    <div style="font-size:12px;color:var(--text-gray);margin-top:4px;">In Progress</div>
+                </div>
+            </div>
+        </div>`;
+    } catch (e) {
+        el.innerHTML = `<p style="padding:20px;color:var(--danger-red);text-align:center">${e.message}</p>`;
+    }
+}
+
+// ─── Admin Rate ───────────────────────────────────────────────────────────────
+async function loadAdmin() {
+    selectedRatings = {};
+    const el = document.getElementById('admin-list');
+    el.innerHTML = '<p style="padding:20px;color:#94A3B8;text-align:center">Loading…</p>';
+    try {
+        const tasks = await getTasks({ status: 'completed' });
+        if (!tasks.length) {
+            el.innerHTML = '<div class="card" style="text-align:center;padding:24px;color:var(--text-gray);font-size:14px;">No completed tasks to rate.</div>';
+            return;
+        }
+        el.innerHTML = tasks.map(t => {
+            const bin = t.bin || {};
+            const cl  = t.cleaner || {};
+            const blockName = blockMap[bin.block_id] || `Block #${bin.block_id}`;
+            const completedAt = t.completed_at
+                ? new Date(t.completed_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                : '—';
+            const photos = (t.photos || []).map(url =>
+                `<img src="${url}" class="photo-thumb" onerror="this.style.display='none'">`
+            ).join('');
+            const stars = Array.from({ length: 5 }, (_, i) =>
+                `<i class="fa-regular fa-star star" data-task="${t.id}" data-val="${i + 1}"
+                    onclick="setStar(${t.id}, ${i + 1})"></i>`
+            ).join('');
+            return `
+            <div class="card" id="rate-card-${t.id}">
+                <div style="display:flex;justify-content:space-between;font-size:13px;
+                            font-weight:700;color:var(--text-dark);margin-bottom:8px;">
+                    <span><i class="fa-solid fa-user"></i> ${cl.name || '—'}</span>
+                    <span style="color:var(--text-gray);font-weight:400;font-size:12px;">${completedAt}</span>
+                </div>
+                <div style="font-size:13px;font-weight:600;color:var(--text-dark);margin-bottom:8px;">
+                    ${blockName} · Floor ${bin.floor ?? '?'} · Bin ${bin.bin_number ?? '?'}
+                </div>
+                ${photos ? `<div class="photo-row">${photos}</div>` : ''}
+                <div id="stars-${t.id}" style="display:flex;gap:4px;margin:10px 0;">${stars}</div>
+                <input type="text" id="comment-${t.id}" placeholder="Add a comment…"
+                       style="width:100%;border:1px solid #CBD5E1;border-radius:10px;
+                              padding:10px;font-size:13px;margin-bottom:10px;">
+                <button class="btn-primary" onclick="doRate(${t.id}, this)">
+                    <i class="fa-solid fa-star"></i> Submit Rating
+                </button>
+            </div>`;
+        }).join('');
+    } catch (e) {
+        el.innerHTML = `<p style="padding:20px;color:var(--danger-red);text-align:center">${e.message}</p>`;
+    }
+}
+
+window.setStar = (taskId, val) => {
+    selectedRatings[taskId] = val;
+    document.querySelectorAll(`[data-task="${taskId}"]`).forEach(s => {
+        const isActive = parseInt(s.dataset.val) <= val;
+        s.className = `fa-${isActive ? 'solid' : 'regular'} fa-star star${isActive ? ' active' : ''}`;
+    });
+};
+
+window.doRate = async (taskId, btn) => {
+    const rating = selectedRatings[taskId];
+    if (!rating) { alert('Please select a star rating first'); return; }
+    const comment = document.getElementById('comment-' + taskId).value.trim();
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Submitting…';
+    try {
+        await rateTask(taskId, rating, comment || undefined);
+        const card = document.getElementById('rate-card-' + taskId);
+        card.style.border = '1px solid var(--success-green)';
+        card.style.background = '#F0FDF4';
+        btn.outerHTML = `<div style="text-align:center;color:var(--success-green);
+            font-weight:700;padding:10px;">
+            <i class="fa-solid fa-check-circle"></i> Rated ${rating} Star${rating > 1 ? 's' : ''}
+        </div>`;
+    } catch (e) {
+        alert(e.message || 'Rating failed');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-star"></i> Submit Rating';
+    }
+};
+
+// ─── Init ────────────────────────────────────────────────────────────────────
+setInterval(() => {
+    document.getElementById('sb-time').textContent =
+        new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const tEl = document.getElementById('clock-btn-time');
+    if (tEl) tEl.textContent = new Date().toLocaleTimeString('en-US',
+        { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+}, 1000);
+
+(async () => {
+    if (!ME) { ME = await getMe().catch(() => null); }
+    const blocks = await getBlocks().catch(() => []);
+    blocks.forEach(b => { blockMap[b.id] = b.name; });
+    await loadClock();
+})();
+</script>
+</body>
+</html>
