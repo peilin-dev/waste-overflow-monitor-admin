@@ -196,18 +196,72 @@ function updateClockUI(rec) {
 window.handleClock = async () => {
     const btn = document.getElementById('clock-btn');
     const msg = document.getElementById('clock-msg');
-    btn.disabled = true;
     msg.style.display = 'none';
-    try {
-        const rec = await getToday();
-        let updated;
-        if (!rec) {
-            updated = await clockIn();
+
+    const rec = await getToday().catch(() => null);
+
+    if (!rec) {
+        // Clock In — no confirmation needed
+        btn.disabled = true;
+        try {
+            const updated = await clockIn();
             showClockMsg('Clocked in successfully!', 'success');
-        } else if (!rec.clock_out) {
-            updated = await clockOut();
-            showClockMsg('Clocked out successfully!', 'success');
+            if (updated) updateClockUI(updated);
+        } catch (e) {
+            showClockMsg(e.message || 'Error', 'error');
+            btn.disabled = false;
         }
+    } else if (!rec.clock_out) {
+        // Clock Out — show confirmation first
+        showClockConfirm(rec);
+    }
+};
+
+function showClockConfirm(rec) {
+    const old = document.getElementById('clock-confirm');
+    if (old) old.remove();
+
+    const fmt = dt => new Date(dt).toLocaleTimeString('en-US',
+        { hour: '2-digit', minute: '2-digit', hour12: false });
+
+    const el = document.createElement('div');
+    el.id = 'clock-confirm';
+    Object.assign(el.style, {
+        position: 'absolute', inset: '0', background: 'rgba(0,0,0,0.5)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        zIndex: '500', borderRadius: '32px',
+    });
+    el.innerHTML = `
+        <div style="background:#fff;border-radius:20px;padding:28px 24px;margin:0 24px;text-align:center;box-shadow:0 20px 40px rgba(0,0,0,0.2);">
+            <div style="font-size:36px;margin-bottom:12px;">🕐</div>
+            <div style="font-size:16px;font-weight:700;color:#1E293B;margin-bottom:8px;">Clock Out?</div>
+            <div style="font-size:13px;color:#64748B;margin-bottom:20px;">
+                You clocked in at <b>${fmt(rec.clock_in)}</b>.<br>Confirm clock out?
+            </div>
+            <div style="display:flex;gap:10px;">
+                <button onclick="document.getElementById('clock-confirm').remove()"
+                    style="flex:1;padding:12px;border-radius:10px;border:1px solid #CBD5E1;
+                           background:#F8FAFC;color:#64748B;font-size:14px;font-weight:600;cursor:pointer;">
+                    Cancel
+                </button>
+                <button onclick="confirmClockOut()"
+                    style="flex:1;padding:12px;border-radius:10px;border:none;
+                           background:linear-gradient(135deg,#34D399,#059669);
+                           color:white;font-size:14px;font-weight:600;cursor:pointer;">
+                    Confirm
+                </button>
+            </div>
+        </div>`;
+    document.querySelector('.mobile-frame').appendChild(el);
+}
+
+window.confirmClockOut = async () => {
+    document.getElementById('clock-confirm')?.remove();
+    const btn = document.getElementById('clock-btn');
+    btn.disabled = true;
+    try {
+        const updated = await clockOut();
+        showClockMsg('Clocked out successfully!', 'success');
         if (updated) updateClockUI(updated);
     } catch (e) {
         showClockMsg(e.message || 'Error', 'error');
