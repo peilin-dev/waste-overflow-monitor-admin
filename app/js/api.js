@@ -40,6 +40,8 @@ export const rateTask   = (id, rating, comment) =>
     req('POST', `/tasks/${id}/rate`, { rating, comment });
 
 export const getPerformance = id => req('GET', `/users/${id}/performance`);
+export const changePassword = (currentPwd, newPwd) =>
+    req('POST', '/auth/change-password', { current_password: currentPwd, new_password: newPwd });
 
 export async function uploadFile(file) {
     const token = getToken();
