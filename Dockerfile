@@ -4,7 +4,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
-RUN npm run build && echo "=== dist contents ===" && ls -la /app/dist/
+RUN npm run build && echo "=== dist contents ===" && ls -la /app/dist/ && (test -f /app/dist/index.html && echo "✓ index.html EXISTS" || (echo "✗ index.html MISSING" && exit 1))
 
 FROM nginx:alpine
 

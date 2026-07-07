@@ -51,5 +51,5 @@ jobs:
             cd ~/waste-monitor
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
             docker compose pull frontend
-            docker compose up -d --no-deps frontend
+            docker compose up -d --no-deps --force-recreate frontend
             docker image prune -f
