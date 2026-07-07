@@ -92,7 +92,7 @@ export default function TaskScoring() {
         <table style={{ width: '100%', minWidth: 680, borderCollapse: 'collapse' }}>
           <thead>
             <tr>
-              {['Employee', 'Task Location', 'Completed', 'Rating', 'Comment', 'Action'].map(h => (
+              {['Employee', 'Task Location', 'Completed', 'Photos', 'Rating', 'Comment', 'Action'].map(h => (
                 <th key={h} style={{ background: '#f7f8fa', fontSize: 11, fontWeight: 600, color: '#666', textAlign: 'left', padding: '10px 16px', borderBottom: '1px solid #ededed' }}>
                   {h}
                 </th>
@@ -102,7 +102,7 @@ export default function TaskScoring() {
           <tbody>
             {tasks.length === 0 ? (
               <tr>
-                <td colSpan={6} style={{ padding: 32, textAlign: 'center', color: '#999', fontSize: 13 }}>
+                <td colSpan={7} style={{ padding: 32, textAlign: 'center', color: '#999', fontSize: 13 }}>
                   No completed tasks to score
                 </td>
               </tr>
@@ -141,6 +141,31 @@ export default function TaskScoring() {
                   {/* Completed At */}
                   <td style={{ padding: '11px 16px', borderBottom: '1px solid #ededed', fontSize: 11.5, color: '#999' }}>
                     {fmt(task.completed_at ?? task.rated_at)}
+                  </td>
+
+                  {/* Photos */}
+                  <td style={{ padding: '11px 16px', borderBottom: '1px solid #ededed' }}>
+                    <div style={{ display: 'flex', gap: 4 }}>
+                      {(task.photos ?? []).slice(0, 2).map((url, i) => (
+                        <div key={i} style={{ position: 'relative' }}>
+                          <img
+                            src={url}
+                            style={{ width: 36, height: 36, objectFit: 'cover', borderRadius: 4, border: '1px solid #e0e0e0', cursor: 'pointer' }}
+                            onClick={() => window.open(url, '_blank')}
+                            onError={e => { (e.target as HTMLImageElement).style.display = 'none' }}
+                          />
+                          <span style={{
+                            position: 'absolute', top: 1, left: 1,
+                            background: i === 0 ? '#3a7bc0' : '#5ca85c',
+                            color: '#fff', fontSize: 7, fontWeight: 700,
+                            padding: '1px 3px', borderRadius: 2, lineHeight: 1.2,
+                          }}>
+                            {i === 0 ? 'B' : 'A'}
+                          </span>
+                        </div>
+                      ))}
+                      {!(task.photos?.length) && <span style={{ fontSize: 11, color: '#ccc' }}>—</span>}
+                    </div>
                   </td>
 
                   {/* Rating */}
