@@ -1,0 +1,18 @@
+{
+  "name": "SWOMS Cleaner App",
+  "short_name": "SWOMS",
+  "description": "Smart Waste Overflow Monitoring System",
+  "start_url": "/app/main.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#E2E8F0",
+  "theme_color": "#3B82F6",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%233B82F6'/><text y='.9em' font-size='80' x='10'>🗑️</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

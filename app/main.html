@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SWOMS</title>
+    <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/app.css">
 </head>
@@ -30,6 +31,7 @@
                     <div>
                         <div id="user-name" style="font-size:18px;font-weight:700;color:var(--text-dark);">—</div>
                         <div id="user-zone" style="font-size:12px;color:var(--text-gray);">—</div>
+                        <div id="today-date" style="font-size:11px;color:var(--text-gray);margin-top:2px;">—</div>
                     </div>
                     <button onclick="doLogout()" style="margin-left:auto;background:none;border:none;
                         color:var(--text-gray);font-size:20px;cursor:pointer;">
@@ -65,6 +67,8 @@
 
                 <div id="clock-msg" style="display:none;text-align:center;padding:10px;
                      border-radius:10px;font-size:13px;margin-bottom:8px;"></div>
+                <div id="clock-done-msg" style="display:none;text-align:center;padding:12px;
+                     background:#D1FAE5;border-radius:12px;font-size:13px;font-weight:600;color:#065F46;"></div>
             </div>
         </div>
 
@@ -134,18 +138,21 @@ requireAuth();
 
 // ─── Globals ────────────────────────────────────────────────────────────────
 let ME = getUser();
-let blockMap = {};       // { id: name }
-let uploadedPhotos = []; // URLs collected before submit
-let selectedRatings = {}; // { taskId: stars }
+let blockMap = {};
+let uploadedPhotos = [];
+let selectedRatings = {};
+let tasksRefreshTimer = null;
 
 // ─── Nav ────────────────────────────────────────────────────────────────────
 window.switchTab = async (tab) => {
+    clearInterval(tasksRefreshTimer);
+    tasksRefreshTimer = null;
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     document.getElementById('page-' + tab).classList.add('active');
     document.getElementById('nav-' + tab).classList.add('active');
     if (tab === 'clock')  await loadClock();
-    if (tab === 'tasks')  await loadTasks();
+    if (tab === 'tasks')  { await loadTasks(); tasksRefreshTimer = setInterval(loadTasks, 30000); }
     if (tab === 'report') await loadReport();
     if (tab === 'kpi')    await loadKpi();
     if (tab === 'admin')  await loadAdmin();
@@ -160,6 +167,8 @@ async function loadClock() {
         document.getElementById('user-zone').textContent =
             (ME.zone || 'No zone') + ' · SWOMS';
     }
+    document.getElementById('today-date').textContent =
+        new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
     const rec = await getToday().catch(() => null);
     updateClockUI(rec);
 }
@@ -187,9 +196,17 @@ function updateClockUI(rec) {
         clockBtn.style.background = 'linear-gradient(135deg,#34D399,#059669)';
         clockBtn.disabled = false;
     } else {
-        btnLabel.textContent = 'Done';
+        btnLabel.textContent = 'Done ✓';
         clockBtn.style.background = '#94A3B8';
         clockBtn.disabled = true;
+        const doneEl = document.getElementById('clock-done-msg');
+        if (doneEl) {
+            const hrs = rec.clock_out && rec.clock_in
+                ? ((new Date(rec.clock_out) - new Date(rec.clock_in)) / 3600000).toFixed(1)
+                : null;
+            doneEl.innerHTML = `🎉 Today's work complete!${hrs ? ` &nbsp;·&nbsp; ${hrs}h on duty` : ''}`;
+            doneEl.style.display = 'block';
+        }
     }
 }
 
@@ -371,7 +388,9 @@ async function loadTasks() {
 
         el.innerHTML = html;
     } catch (e) {
-        el.innerHTML = `<p style="padding:20px;color:var(--danger-red);text-align:center">${e.message}</p>`;
+        el.innerHTML = `<p style="padding:20px;color:var(--danger-red);text-align:center">${e.message}
+            <br><button onclick="loadTasks()" style="margin-top:8px;padding:8px 16px;border-radius:8px;
+            border:1px solid #CBD5E1;background:#fff;cursor:pointer;font-size:13px;">Retry</button></p>`;
     }
 }
 
@@ -512,15 +531,15 @@ async function loadReport() {
             return `<option value="${t.id}">${blockName} · Floor ${bin.floor} · Bin ${bin.bin_number}</option>`;
         }).join('');
 
-        const beforePreviewHtml = beforeUrl ? `
-            <div style="margin-bottom:10px;">
-                <div style="font-size:11px;font-weight:700;color:#64748B;margin-bottom:4px;">BEFORE (already saved)</div>
+        const beforePreviewHtml = `
+            <div id="before-photo-wrap" style="margin-bottom:10px;${beforeUrl ? '' : 'display:none'}">
+                <div style="font-size:11px;font-weight:700;color:#64748B;margin-bottom:4px;">BEFORE (saved)</div>
                 <div style="position:relative;display:inline-block;">
-                    <img src="${beforeUrl}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:2px solid #3B82F6;">
+                    <img src="${beforeUrl || ''}" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:2px solid #3B82F6;">
                     <span style="position:absolute;top:2px;left:2px;background:#3B82F6;color:white;
                         font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;">B</span>
                 </div>
-            </div>` : '';
+            </div>`;
 
         el.innerHTML = `
         <div class="card">
@@ -557,6 +576,13 @@ async function loadReport() {
         window.onReportTaskChange = (taskId) => {
             const url = localStorage.getItem(`wm_before_${taskId}`);
             uploadedPhotos = url ? [url] : [];
+            document.getElementById('photo-preview').innerHTML = '';
+            const beforeWrap = document.getElementById('before-photo-wrap');
+            if (beforeWrap) {
+                beforeWrap.style.display = url ? 'block' : 'none';
+                const img = beforeWrap.querySelector('img');
+                if (img && url) img.src = url;
+            }
         };
 
         document.getElementById('photo-input').addEventListener('change', async (e) => {
@@ -606,7 +632,10 @@ async function loadKpi() {
     el.innerHTML = '<p style="padding:20px;color:#94A3B8;text-align:center">Loading…</p>';
     if (!ME) { el.innerHTML = '<p style="padding:20px;color:var(--danger-red);text-align:center">Not logged in</p>'; return; }
     try {
-        const p = await getPerformance(ME.id);
+        const [p, history] = await Promise.all([
+            getPerformance(ME.id),
+            getTasks({ status: 'rated', cleaner_id: ME.id }),
+        ]);
         const rating = p.average_rating ? p.average_rating.toFixed(1) : '—';
         const stars = p.average_rating
             ? Array.from({ length: 5 }, (_, i) =>
@@ -614,6 +643,36 @@ async function loadKpi() {
                     style="color:${i < Math.round(p.average_rating) ? 'var(--warning-orange)' : '#CBD5E1'}"></i>`
               ).join('')
             : '—';
+
+        const historyHtml = history.slice(0, 5).map(t => {
+            const bin = t.bin || {};
+            const blockName = blockMap[bin.block_id] || `Block #${bin.block_id}`;
+            const ratingStars = t.rating
+                ? Array.from({ length: 5 }, (_, i) =>
+                    `<i class="fa-${i < t.rating ? 'solid' : 'regular'} fa-star"
+                        style="font-size:11px;color:${i < t.rating ? 'var(--warning-orange)' : '#CBD5E1'}"></i>`
+                  ).join('')
+                : '<span style="color:#CBD5E1;font-size:11px;">Not rated</span>';
+            const completedAt = t.completed_at
+                ? new Date(t.completed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                : '—';
+            return `
+            <div style="display:flex;align-items:center;justify-content:space-between;
+                        padding:10px 0;border-bottom:1px solid #F1F5F9;">
+                <div>
+                    <div style="font-size:13px;font-weight:600;color:var(--text-dark);">
+                        ${blockName} · F${bin.floor ?? '?'} · B${bin.bin_number ?? '?'}
+                    </div>
+                    <div style="font-size:11px;color:var(--text-gray);margin-top:2px;">${completedAt}</div>
+                </div>
+                <div style="text-align:right;">
+                    <div>${ratingStars}</div>
+                    ${t.comment ? `<div style="font-size:11px;color:var(--text-gray);max-width:100px;
+                        text-overflow:ellipsis;overflow:hidden;white-space:nowrap;">"${t.comment}"</div>` : ''}
+                </div>
+            </div>`;
+        }).join('');
+
         el.innerHTML = `
         <div class="card" style="text-align:center;">
             <div class="score-circle">
@@ -643,9 +702,18 @@ async function loadKpi() {
                     <div style="font-size:12px;color:var(--text-gray);margin-top:4px;">In Progress</div>
                 </div>
             </div>
-        </div>`;
+        </div>
+        ${historyHtml ? `
+        <div class="card">
+            <div style="font-size:13px;font-weight:700;color:var(--text-dark);margin-bottom:4px;">
+                <i class="fa-solid fa-clock-rotate-left"></i> Recent Rated Tasks
+            </div>
+            ${historyHtml}
+        </div>` : ''}`;
     } catch (e) {
-        el.innerHTML = `<p style="padding:20px;color:var(--danger-red);text-align:center">${e.message}</p>`;
+        el.innerHTML = `<p style="padding:20px;color:var(--danger-red);text-align:center">${e.message}
+            <br><button onclick="loadKpi()" style="margin-top:8px;padding:8px 16px;border-radius:8px;
+            border:1px solid #CBD5E1;background:#fff;cursor:pointer;font-size:13px;">Retry</button></p>`;
     }
 }
 
@@ -655,12 +723,17 @@ async function loadAdmin() {
     const el = document.getElementById('admin-list');
     el.innerHTML = '<p style="padding:20px;color:#94A3B8;text-align:center">Loading…</p>';
     try {
-        const tasks = await getTasks({ status: 'completed' });
+        const [completed, rated] = await Promise.all([
+            getTasks({ status: 'completed' }),
+            getTasks({ status: 'rated' }),
+        ]);
+        const tasks = [...completed, ...rated.slice(0, 10)];
         if (!tasks.length) {
             el.innerHTML = '<div class="card" style="text-align:center;padding:24px;color:var(--text-gray);font-size:14px;">No completed tasks to rate.</div>';
             return;
         }
         el.innerHTML = tasks.map(t => {
+        const isRated = t.status === 'rated';
             const bin = t.bin || {};
             const cl  = t.cleaner || {};
             const blockName = blockMap[bin.block_id] || `Block #${bin.block_id}`;
@@ -691,19 +764,53 @@ async function loadAdmin() {
                     ${blockName} · Floor ${bin.floor ?? '?'} · Bin ${bin.bin_number ?? '?'}
                 </div>
                 ${photos ? `<div class="photo-row">${photos}</div>` : ''}
+                ${isRated ? `
+                <div style="display:flex;align-items:center;justify-content:space-between;
+                            background:#F0FDF4;border-radius:10px;padding:10px;margin-top:6px;">
+                    <div>
+                        ${Array.from({length:5},(_,i)=>`<i class="fa-${i<t.rating?'solid':'regular'} fa-star"
+                            style="color:${i<t.rating?'var(--warning-orange)':'#CBD5E1'};font-size:14px;"></i>`).join('')}
+                    </div>
+                    <span style="font-size:11px;color:var(--success-green);font-weight:700;">✓ Rated</span>
+                </div>
+                ${t.comment ? `<div style="font-size:12px;color:var(--text-gray);margin-top:6px;font-style:italic;">"${t.comment}"</div>` : ''}
+                <button class="btn-primary" style="margin-top:8px;background:#64748B;" onclick="reRate(${t.id})">
+                    <i class="fa-solid fa-pen"></i> Re-rate
+                </button>` : `
                 <div id="stars-${t.id}" style="display:flex;gap:4px;margin:10px 0;">${stars}</div>
                 <input type="text" id="comment-${t.id}" placeholder="Add a comment…"
                        style="width:100%;border:1px solid #CBD5E1;border-radius:10px;
                               padding:10px;font-size:13px;margin-bottom:10px;">
                 <button class="btn-primary" onclick="doRate(${t.id}, this)">
                     <i class="fa-solid fa-star"></i> Submit Rating
-                </button>
+                </button>`}
             </div>`;
         }).join('');
     } catch (e) {
-        el.innerHTML = `<p style="padding:20px;color:var(--danger-red);text-align:center">${e.message}</p>`;
+        el.innerHTML = `<p style="padding:20px;color:var(--danger-red);text-align:center">${e.message}
+            <br><button onclick="loadAdmin()" style="margin-top:8px;padding:8px 16px;border-radius:8px;
+            border:1px solid #CBD5E1;background:#fff;cursor:pointer;font-size:13px;">Retry</button></p>`;
     }
 }
+
+window.reRate = (taskId) => {
+    const card = document.getElementById('rate-card-' + taskId);
+    const ratedDiv = card.querySelector('[style*="F0FDF4"]');
+    if (ratedDiv) {
+        const stars = Array.from({length:5},(_,i)=>
+            `<i class="fa-regular fa-star star" data-task="${taskId}" data-val="${i+1}"
+                onclick="setStar(${taskId},${i+1})"></i>`).join('');
+        ratedDiv.outerHTML = `
+            <div id="stars-${taskId}" style="display:flex;gap:4px;margin:10px 0;">${stars}</div>
+            <input type="text" id="comment-${taskId}" placeholder="Update comment…"
+                   style="width:100%;border:1px solid #CBD5E1;border-radius:10px;
+                          padding:10px;font-size:13px;margin-bottom:10px;">
+            <button class="btn-primary" onclick="doRate(${taskId},this)">
+                <i class="fa-solid fa-star"></i> Update Rating
+            </button>`;
+        card.querySelector('[onclick*="reRate"]')?.remove();
+    }
+};
 
 window.setStar = (taskId, val) => {
     selectedRatings[taskId] = val;
