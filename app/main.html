@@ -283,46 +283,93 @@ async function loadTasks() {
     const el = document.getElementById('tasks-list');
     el.innerHTML = '<p style="padding:20px;color:#94A3B8;text-align:center">Loading…</p>';
     try {
-        const tasks = await getTasks({ status: 'pending' });
-        if (!tasks.length) {
-            el.innerHTML = '<p style="padding:30px;color:#94A3B8;text-align:center;font-size:14px;">No pending tasks 🎉</p>';
-            return;
-        }
-        el.innerHTML = tasks.map(t => {
-            const bin = t.bin || {};
-            const fill = bin.current_fill ?? 0;
-            const blockName = blockMap[bin.block_id] || `Block #${bin.block_id}`;
-            const isUrgent = fill >= 90;
-            const color = fill >= 90 ? 'var(--danger-red)' : fill >= 60 ? 'var(--warning-orange)' : 'var(--success-green)';
-            return `
-            <div class="card">
-                <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
-                    <div style="width:42px;height:42px;border-radius:12px;display:flex;align-items:center;
-                                justify-content:center;font-size:18px;
-                                background:${isUrgent ? '#FEE2E2' : '#FEF3C7'};
-                                color:${color};">
-                        <i class="fa-solid fa-trash-can"></i>
-                    </div>
-                    <div style="flex:1;">
-                        <div style="font-weight:700;font-size:14px;color:var(--text-dark);">
-                            ${blockName} · Floor ${bin.floor ?? '?'} · Bin ${bin.bin_number ?? '?'}
-                        </div>
-                        <div style="font-size:12px;color:var(--text-gray);">Sensor: ${bin.sensor_id || '—'}</div>
-                    </div>
-                    ${isUrgent ? '<span class="badge" style="background:#FEE2E2;color:var(--danger-red);">URGENT</span>' : ''}
-                </div>
-                <div class="bar-bg">
-                    <div class="bar-fill" style="width:${fill}%;background:${color};"></div>
-                </div>
-                <div style="display:flex;justify-content:space-between;font-size:12px;
-                            font-weight:600;color:var(--text-dark);margin-bottom:12px;">
-                    <span>Fill Level</span><span>${fill}%</span>
-                </div>
-                <button class="btn-primary" onclick="doAccept(${t.id}, this)">
-                    <i class="fa-solid fa-hand-pointer"></i> Accept Task
-                </button>
+        const [active, pending] = await Promise.all([
+            ME ? getTasks({ status: 'in_progress', cleaner_id: ME.id }) : Promise.resolve([]),
+            getTasks({ status: 'pending' }),
+        ]);
+
+        let html = '';
+
+        // My active tasks section
+        if (active.length) {
+            html += `<div style="padding:12px 16px 4px;font-size:12px;font-weight:700;
+                color:var(--success-green);letter-spacing:.05em;">
+                <i class="fa-solid fa-circle-check"></i> MY ACTIVE TASKS (${active.length})
             </div>`;
-        }).join('');
+            html += active.map(t => {
+                const bin = t.bin || {};
+                const blockName = blockMap[bin.block_id] || `Block #${bin.block_id}`;
+                const acceptedAt = t.accepted_at
+                    ? new Date(t.accepted_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+                    : '—';
+                return `
+                <div class="card" style="border-left:3px solid var(--success-green);">
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+                        <div style="width:42px;height:42px;border-radius:12px;display:flex;align-items:center;
+                                    justify-content:center;font-size:18px;background:#D1FAE5;color:var(--success-green);">
+                            <i class="fa-solid fa-person-walking"></i>
+                        </div>
+                        <div style="flex:1;">
+                            <div style="font-weight:700;font-size:14px;color:var(--text-dark);">
+                                ${blockName} · Floor ${bin.floor ?? '?'} · Bin ${bin.bin_number ?? '?'}
+                            </div>
+                            <div style="font-size:12px;color:var(--text-gray);">Accepted at ${acceptedAt}</div>
+                        </div>
+                        <span class="badge" style="background:#D1FAE5;color:var(--success-green);">In Progress</span>
+                    </div>
+                    <button class="btn-primary btn-success" onclick="switchTab('report')" style="margin-top:4px;">
+                        <i class="fa-solid fa-camera"></i> Go to Report
+                    </button>
+                </div>`;
+            }).join('');
+        }
+
+        // Available tasks section
+        html += `<div style="padding:12px 16px 4px;font-size:12px;font-weight:700;
+            color:var(--text-gray);letter-spacing:.05em;">
+            <i class="fa-solid fa-list-check"></i> AVAILABLE TASKS
+        </div>`;
+
+        if (!pending.length) {
+            html += '<p style="padding:20px;color:#94A3B8;text-align:center;font-size:14px;">No pending tasks 🎉</p>';
+        } else {
+            html += pending.map(t => {
+                const bin = t.bin || {};
+                const fill = bin.current_fill ?? 0;
+                const blockName = blockMap[bin.block_id] || `Block #${bin.block_id}`;
+                const isUrgent = fill >= 90;
+                const color = fill >= 90 ? 'var(--danger-red)' : fill >= 60 ? 'var(--warning-orange)' : 'var(--success-green)';
+                return `
+                <div class="card">
+                    <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+                        <div style="width:42px;height:42px;border-radius:12px;display:flex;align-items:center;
+                                    justify-content:center;font-size:18px;
+                                    background:${isUrgent ? '#FEE2E2' : '#FEF3C7'};color:${color};">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </div>
+                        <div style="flex:1;">
+                            <div style="font-weight:700;font-size:14px;color:var(--text-dark);">
+                                ${blockName} · Floor ${bin.floor ?? '?'} · Bin ${bin.bin_number ?? '?'}
+                            </div>
+                            <div style="font-size:12px;color:var(--text-gray);">Sensor: ${bin.sensor_id || '—'}</div>
+                        </div>
+                        ${isUrgent ? '<span class="badge" style="background:#FEE2E2;color:var(--danger-red);">URGENT</span>' : ''}
+                    </div>
+                    <div class="bar-bg">
+                        <div class="bar-fill" style="width:${fill}%;background:${color};"></div>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;font-size:12px;
+                                font-weight:600;color:var(--text-dark);margin-bottom:12px;">
+                        <span>Fill Level</span><span>${fill}%</span>
+                    </div>
+                    <button class="btn-primary" onclick="doAccept(${t.id}, this)">
+                        <i class="fa-solid fa-hand-pointer"></i> Accept Task
+                    </button>
+                </div>`;
+            }).join('');
+        }
+
+        el.innerHTML = html;
     } catch (e) {
         el.innerHTML = `<p style="padding:20px;color:var(--danger-red);text-align:center">${e.message}</p>`;
     }
