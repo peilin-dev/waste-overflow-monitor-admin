@@ -138,7 +138,7 @@ export default function Users() {
         <div style={{ padding: '12px 16px', borderBottom: '1px solid #ededed', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: '#5b9bd5' }}>User Management</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {['all', 'admin', 'cleaner'].map(r => (
+            {['all', 'admin', 'leader', 'cleaner'].map(r => (
               <button key={r} onClick={() => setRoleFilter(r)} style={{
                 fontSize: 11.5, fontWeight: 500, padding: '6px 14px', borderRadius: 14,
                 background: roleFilter === r ? '#4a90d9' : '#fff',
