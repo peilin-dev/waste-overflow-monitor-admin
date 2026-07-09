@@ -10,7 +10,7 @@ const http = axios.create({
 
 // 请求拦截器：自动注入 JWT
 http.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token')
+  const token = useAuthStore.getState().token
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
