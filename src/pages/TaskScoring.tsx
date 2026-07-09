@@ -200,7 +200,7 @@ export default function TaskScoring() {
                       </span>
                     ) : (
                       <span style={{ fontSize: 10.5, fontWeight: 600, padding: '3px 9px', borderRadius: 11, background: '#e9f3e9', color: '#5ca85c' }}>
-                        ★ {task.rating}.0 · Rated
+                        ★ {task.rating ?? '—'} · Rated
                       </span>
                     )}
                   </td>

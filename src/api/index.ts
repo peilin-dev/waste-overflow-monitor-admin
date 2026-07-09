@@ -1,6 +1,7 @@
 import axios from 'axios'
 import { message } from 'antd'
-import type { LoginResponse, User, Block, Bin, BinStats, Task, Role, RoleCreate, RoleUpdate, UserPerformance } from '@/types'
+import type { LoginResponse, User, Block, Bin, BinStats, Task, Role, RoleCreate, RoleUpdate, UserPerformance, AttendanceRecord } from '@/types'
+import { useAuthStore } from '@/store/authStore'
 
 const http = axios.create({
   baseURL: '/api',
@@ -22,7 +23,7 @@ http.interceptors.response.use(
   (err) => {
     const status = err.response?.status
     if (status === 401 && !err.config?.url?.includes('/auth/login')) {
-      localStorage.removeItem('token')
+      useAuthStore.getState().logout()
       window.location.href = '/login'
     } else if (status === 403) {
       message.error('Permission denied')
@@ -103,3 +104,6 @@ export const assignTask = (id: number, cleaner_id: number) =>
 export const rateTask = (id: number, rating: number, comment?: string) =>
   http.post(`/tasks/${id}/rate`, { rating, comment })
 export const deleteTask = (id: number) => http.delete(`/tasks/${id}`)
+
+// Attendance
+export const getTodayAttendance = () => http.get<AttendanceRecord[]>('/attendance/all-today')

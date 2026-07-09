@@ -225,11 +225,11 @@ export default function Tasks() {
                       {task.status === 'rated' && (
                         <span style={{ color: '#e8a93b', fontWeight: 600, fontSize: 12 }}>★ {task.rating}</span>
                       )}
-                      {task.status === 'pending' && !task.cleaner_id && (
+                      {task.status === 'pending' && (
                         <a
                           onClick={() => { setAssignModal({ open: true, task }); setSelectedCleaner(null) }}
                           style={{ color: '#5ca85c', cursor: 'pointer', fontWeight: 500 }}
-                        >Assign</a>
+                        >{task.cleaner_id ? 'Reassign' : 'Assign'}</a>
                       )}
                       <Popconfirm title="Delete this task?" onConfirm={() => handleDelete(task.id)} okText="Yes" cancelText="No">
                         <a style={{ color: '#d9534f', cursor: 'pointer', fontWeight: 500 }}>Delete</a>
@@ -249,7 +249,7 @@ export default function Tasks() {
       </p>
 
       <Modal
-        title="Assign Task"
+        title={assignModal.task?.cleaner_id ? 'Reassign Task' : 'Assign Task'}
         open={assignModal.open}
         onOk={handleAssign}
         onCancel={() => { setAssignModal({ open: false, task: null }); setSelectedCleaner(null) }}

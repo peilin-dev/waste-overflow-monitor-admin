@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { getUsers, getTasks, getBlocks } from '@/api'
-import type { User, Task, Block } from '@/types'
+import { getUsers, getTasks, getBlocks, getTodayAttendance } from '@/api'
+import type { User, Task, Block, AttendanceRecord } from '@/types'
 
 const POLL_MS = 30000
 
@@ -35,16 +35,19 @@ export default function WorkStatus() {
 
   const load = useCallback(async () => {
     try {
-      const [usersRes, tasksRes, blocksRes] = await Promise.all([
+      const [usersRes, tasksRes, blocksRes, attendanceRes] = await Promise.all([
         getUsers({ role: 'cleaner' }),
         getTasks(),
         getBlocks(),
+        getTodayAttendance(),
       ])
 
       const users: User[] = usersRes.data
       const tasks: Task[] = tasksRes.data
       const blocks: Block[] = blocksRes.data
+      const attendance: AttendanceRecord[] = attendanceRes.data
 
+      const clockedInIds = new Set(attendance.map(a => a.user_id))
       const todayStr = new Date().toDateString()
 
       const getTaskLocation = (task: Task) => {
@@ -61,9 +64,10 @@ export default function WorkStatus() {
           return ts && new Date(ts).toDateString() === todayStr
         }).length
 
-        let workState: WorkState = 'Idle'
+        let workState: WorkState = 'Offline'
         if (user.status === 'inactive') workState = 'Offline'
-        else if (activeTask) workState = 'On Duty'
+        else if (clockedInIds.has(user.id) && activeTask) workState = 'On Duty'
+        else if (clockedInIds.has(user.id)) workState = 'Idle'
 
         return {
           user,

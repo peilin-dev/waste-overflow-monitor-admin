@@ -143,6 +143,15 @@ export interface RoleUpdate {
   status?: 'active' | 'inactive'
 }
 
+// ─── Attendance ─────────────────────────────────────
+export interface AttendanceRecord {
+  id: number
+  user_id: number
+  clock_in: string
+  clock_out: string | null
+  date: string
+}
+
 // ─── Auth ───────────────────────────────────────────
 export interface LoginResponse {
   access_token: string

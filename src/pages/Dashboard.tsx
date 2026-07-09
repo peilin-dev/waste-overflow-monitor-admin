@@ -239,7 +239,11 @@ export default function Dashboard() {
                   <b style={{ fontSize: 11.5, fontFamily: "'SF Mono',Consolas,monospace", color: '#555' }}>#{task.id}</b>
                   <StatusDot status={task.status} />
                 </div>
-                <div style={{ fontSize: 11, color: '#999' }}>Bin #{task.bin_id}</div>
+                <div style={{ fontSize: 11, color: '#999' }}>
+                  {task.bin
+                    ? (() => { const bl = blocks.find(b => b.id === task.bin!.block_id); return `${bl?.name ?? 'Block ?'} · Floor ${task.bin.floor} · Bin ${task.bin.bin_number}` })()
+                    : `Bin #${task.bin_id}`}
+                </div>
               </div>
               <div style={{ fontSize: 10.5, color: '#bbb' }}>{fmt(task.created_at)}</div>
             </div>
