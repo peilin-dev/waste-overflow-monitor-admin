@@ -2,8 +2,11 @@ import { useCallback, useEffect, useState } from 'react'
 import { message, Popconfirm } from 'antd'
 import type { Block } from '@/types'
 import { getBlocks, createBlock, updateBlock, deleteBlock } from '@/api'
+import { useAuthStore } from '@/store/authStore'
 
 export default function Blocks() {
+  const { user: currentUser } = useAuthStore()
+  const isLeader = currentUser?.role === 'leader'
   const [blocks, setBlocks]       = useState<Block[]>([])
   const [loading, setLoading]     = useState(true)
   const [saved, setSaved]         = useState<Block[]>([])   // snapshot for cancel
@@ -153,9 +156,11 @@ export default function Blocks() {
                     />
                   </td>
                   <td style={{ padding: '10px 16px', borderBottom: '1px solid #ededed' }}>
-                    <Popconfirm title="Delete this block?" onConfirm={() => handleDelete(block.id)} okText="Yes" cancelText="No">
-                      <a style={{ color: '#d9534f', fontSize: 12, fontWeight: 500, cursor: 'pointer' }}>Delete</a>
-                    </Popconfirm>
+                    {!isLeader && (
+                      <Popconfirm title="Delete this block?" onConfirm={() => handleDelete(block.id)} okText="Yes" cancelText="No">
+                        <a style={{ color: '#d9534f', fontSize: 12, fontWeight: 500, cursor: 'pointer' }}>Delete</a>
+                      </Popconfirm>
+                    )}
                   </td>
                 </tr>
               )
@@ -165,12 +170,14 @@ export default function Blocks() {
         </div>
 
         <div style={{ padding: '12px 16px', borderTop: '1px solid #ededed', display: 'flex', alignItems: 'center', gap: 14 }}>
-          <button onClick={handleAdd} style={{
-            background: '#fff', color: '#4a90d9', border: '1px dashed #4a90d9',
-            borderRadius: 5, padding: '6px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-          }}>
-            + Add Block
-          </button>
+          {!isLeader && (
+            <button onClick={handleAdd} style={{
+              background: '#fff', color: '#4a90d9', border: '1px dashed #4a90d9',
+              borderRadius: 5, padding: '6px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+            }}>
+              + Add Block
+            </button>
+          )}
           <span style={{ fontSize: 12, color: '#666' }}>
             Total bins in system: <b>{totalBins}</b> ({blocks.length} blocks)
           </span>
@@ -178,32 +185,34 @@ export default function Blocks() {
       </div>
 
       {/* Save / Cancel */}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 14 }}>
-        <button
-          onClick={handleCancel}
-          disabled={!isDirty}
-          style={{
-            background: '#fff', color: isDirty ? '#666' : '#bbb',
-            border: `1px solid ${isDirty ? '#d0d0d0' : '#e8e8e8'}`,
-            borderRadius: 5, padding: '8px 18px', fontSize: 12.5, fontWeight: 500,
-            cursor: isDirty ? 'pointer' : 'not-allowed',
-          }}
-        >
-          Cancel
-        </button>
-        <button
-          onClick={handleSave}
-          disabled={!isDirty || saving}
-          style={{
-            background: isDirty ? '#4a90d9' : '#a8c8ef',
-            color: '#fff', border: 'none',
-            borderRadius: 5, padding: '8px 18px', fontSize: 12.5, fontWeight: 600,
-            cursor: isDirty ? 'pointer' : 'not-allowed',
-          }}
-        >
-          {saving ? 'Saving…' : 'Save Configuration'}
-        </button>
-      </div>
+      {!isLeader && (
+        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 14 }}>
+          <button
+            onClick={handleCancel}
+            disabled={!isDirty}
+            style={{
+              background: '#fff', color: isDirty ? '#666' : '#bbb',
+              border: `1px solid ${isDirty ? '#d0d0d0' : '#e8e8e8'}`,
+              borderRadius: 5, padding: '8px 18px', fontSize: 12.5, fontWeight: 500,
+              cursor: isDirty ? 'pointer' : 'not-allowed',
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={!isDirty || saving}
+            style={{
+              background: isDirty ? '#4a90d9' : '#a8c8ef',
+              color: '#fff', border: 'none',
+              borderRadius: 5, padding: '8px 18px', fontSize: 12.5, fontWeight: 600,
+              cursor: isDirty ? 'pointer' : 'not-allowed',
+            }}
+          >
+            {saving ? 'Saving…' : 'Save Configuration'}
+          </button>
+        </div>
+      )}
 
       <p style={{ fontSize: 11, color: '#bbb', marginTop: 10, lineHeight: 1.5 }}>
         The structure defined here determines what appears on the <b>Monitoring</b> page and what bins can generate overflow tasks.

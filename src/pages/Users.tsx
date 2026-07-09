@@ -5,6 +5,7 @@ import {
   getUsers, createUser, updateUser, deleteUser, resetPassword,
   getBlocks, getCleanerBlocks, assignBlock, removeBlock, getRoles,
 } from '@/api'
+import { useAuthStore } from '@/store/authStore'
 
 const roleColorMap: Record<string, string> = { admin: '#4a90d9', cleaner: '#5ca85c' }
 const getRoleColor = (role: string) => roleColorMap[role.toLowerCase()] ?? '#8e69c9'
@@ -16,6 +17,8 @@ const statusColor = { active: '#5ca85c', inactive: '#999' }
 const shiftOptions = ['morning', 'evening', 'night']
 
 export default function Users() {
+  const { user: currentUser } = useAuthStore()
+  const isLeader = currentUser?.role === 'leader'
   const [users, setUsers] = useState<User[]>([])
   const [blocks, setBlocks] = useState<Block[]>([])
   const [roles, setRoles] = useState<Role[]>([])
@@ -146,12 +149,14 @@ export default function Users() {
                 {r === 'all' ? 'All' : r.charAt(0).toUpperCase() + r.slice(1)}
               </button>
             ))}
-            <button onClick={() => { form.resetFields(); setModalOpen(true) }} style={{
-              background: '#4a90d9', color: '#fff', border: 'none',
-              borderRadius: 5, padding: '7px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-            }}>
-              + Add User
-            </button>
+            {!isLeader && (
+              <button onClick={() => { form.resetFields(); setModalOpen(true) }} style={{
+                background: '#4a90d9', color: '#fff', border: 'none',
+                borderRadius: 5, padding: '7px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+              }}>
+                + Add User
+              </button>
+            )}
           </div>
         </div>
 
@@ -232,15 +237,17 @@ export default function Users() {
                 )}
 
                 <td style={{ padding: '11px 16px', borderBottom: '1px solid #ededed' }}>
-                  <span style={{ display: 'flex', gap: 12, fontSize: 11.5 }}>
-                    <a onClick={() => handleToggleStatus(user)} style={{ color: user.status === 'active' ? '#d9534f' : '#5ca85c', cursor: 'pointer', fontWeight: 500 }}>
-                      {user.status === 'active' ? 'Deactivate' : 'Restore'}
-                    </a>
-                    <a onClick={() => setResetModal(user)} style={{ color: '#e89c3b', cursor: 'pointer', fontWeight: 500 }}>Reset Pwd</a>
-                    <Popconfirm title="Delete this user?" onConfirm={() => handleDelete(user.id)} okText="Yes" cancelText="No">
-                      <a style={{ color: '#d9534f', cursor: 'pointer', fontWeight: 500 }}>Delete</a>
-                    </Popconfirm>
-                  </span>
+                  {!isLeader && (
+                    <span style={{ display: 'flex', gap: 12, fontSize: 11.5 }}>
+                      <a onClick={() => handleToggleStatus(user)} style={{ color: user.status === 'active' ? '#d9534f' : '#5ca85c', cursor: 'pointer', fontWeight: 500 }}>
+                        {user.status === 'active' ? 'Deactivate' : 'Restore'}
+                      </a>
+                      <a onClick={() => setResetModal(user)} style={{ color: '#e89c3b', cursor: 'pointer', fontWeight: 500 }}>Reset Pwd</a>
+                      <Popconfirm title="Delete this user?" onConfirm={() => handleDelete(user.id)} okText="Yes" cancelText="No">
+                        <a style={{ color: '#d9534f', cursor: 'pointer', fontWeight: 500 }}>Delete</a>
+                      </Popconfirm>
+                    </span>
+                  )}
                 </td>
               </tr>
             ))}

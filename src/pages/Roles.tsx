@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { message, Modal, Form, Input, InputNumber, Select, Popconfirm } from 'antd'
 import type { Role, RoleCreate } from '@/types'
 import { getRoles, createRole, updateRole, deactivateRole, restoreRole } from '@/api'
+import { useAuthStore } from '@/store/authStore'
 
 const avatarColors: Record<string, { bg: string; color: string }> = {
   Admin:   { bg: '#eaf2fb', color: '#3a7bc0' },
@@ -17,6 +18,8 @@ const PersonIcon = () => (
 )
 
 export default function Roles() {
+  const { user: currentUser } = useAuthStore()
+  const isLeader = currentUser?.role === 'leader'
   const [roles, setRoles] = useState<Role[]>([])
   const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
@@ -120,12 +123,14 @@ export default function Roles() {
             <span style={{ fontSize: 13.5, fontWeight: 600, color: '#5b9bd5' }}>All Roles</span>
             <span style={{ fontSize: 11, color: '#999', fontWeight: 400, marginLeft: 8 }}>{roles.length} records</span>
           </div>
-          <button
-            onClick={openCreate}
-            style={{ background: '#4a90d9', color: '#fff', border: 'none', borderRadius: 5, padding: '6px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
-          >
-            + Add Role
-          </button>
+          {!isLeader && (
+            <button
+              onClick={openCreate}
+              style={{ background: '#4a90d9', color: '#fff', border: 'none', borderRadius: 5, padding: '6px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
+            >
+              + Add Role
+            </button>
+          )}
         </div>
 
         <div style={{ overflowX: 'auto' }}>
@@ -189,7 +194,7 @@ export default function Roles() {
                     )}
                   </td>
                   <td style={{ fontSize: 12, padding: '11px 16px', borderBottom: '1px solid #ededed', verticalAlign: 'middle' }}>
-                    {isInactive ? (
+                    {!isLeader && (isInactive ? (
                       <Popconfirm
                         title={`Restore role "${role.name}"?`}
                         description="Users assigned to this role will regain their access."
@@ -214,7 +219,7 @@ export default function Roles() {
                           <a style={{ color: '#d9534f', fontSize: 11.5, fontWeight: 500, cursor: 'pointer' }}>Deactivate</a>
                         </Popconfirm>
                       </span>
-                    )}
+                    ))}
                   </td>
                 </tr>
               )

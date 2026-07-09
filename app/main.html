@@ -937,9 +937,10 @@ setInterval(() => {
     blocks.forEach(b => { blockMap[b.id] = b.name; });
 
     // Show Admin tab only for admins; hide KPI tab for admins (not relevant)
-    if (ME?.role !== 'admin') {
+    if (ME?.role === 'cleaner') {
         document.getElementById('nav-admin').style.display = 'none';
     } else {
+        // admin or leader: hide KPI tab, show Admin Scoring tab
         document.getElementById('nav-kpi').style.display = 'none';
     }
 

@@ -110,8 +110,12 @@ export default function MainLayout() {
       <nav style={{ padding: '14px 12px', flex: 1, overflowY: 'auto' }}>
         <div style={{ fontSize: 10, fontWeight: 700, color: '#999', letterSpacing: '0.06em', textTransform: 'uppercase', margin: '0 8px 8px' }}>Main</div>
         {NAV_MAIN.map(item => <NavItem key={item.key} item={item} />)}
-        <div style={{ fontSize: 10, fontWeight: 700, color: '#999', letterSpacing: '0.06em', textTransform: 'uppercase', margin: '14px 8px 8px' }}>System</div>
-        {NAV_SYSTEM.map(item => <NavItem key={item.key} item={item} />)}
+        {user?.role !== 'leader' && (
+          <>
+            <div style={{ fontSize: 10, fontWeight: 700, color: '#999', letterSpacing: '0.06em', textTransform: 'uppercase', margin: '14px 8px 8px' }}>System</div>
+            {NAV_SYSTEM.map(item => <NavItem key={item.key} item={item} />)}
+          </>
+        )}
         {isMobile && (
           <div style={{ marginTop: 14 }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: '#999', letterSpacing: '0.06em', textTransform: 'uppercase', margin: '0 8px 8px' }}>Account</div>
@@ -188,7 +192,9 @@ export default function MainLayout() {
               {!isMobile && (
                 <div>
                   <b style={{ fontSize: 12, display: 'block', lineHeight: 1.2 }}>{user?.name || user?.username}</b>
-                  <span style={{ fontSize: 10, color: '#999' }}>Administrator</span>
+                  <span style={{ fontSize: 10, color: '#999' }}>
+                    {user?.role === 'leader' ? 'Leader' : 'Administrator'}
+                  </span>
                 </div>
               )}
             </div>

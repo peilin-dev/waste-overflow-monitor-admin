@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { message, Popconfirm, Modal, Form, Input, InputNumber, Select } from 'antd'
 import type { Bin, Block } from '@/types'
 import { getBins, createBin, updateBin, deleteBin, getBlocks } from '@/api'
+import { useAuthStore } from '@/store/authStore'
 
 function FillBar({ pct, status }: { pct: number; status: string }) {
   const color = status === 'full' ? '#d9534f' : status === 'warning' ? '#e89c3b' : '#5ca85c'
@@ -30,6 +31,8 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 export default function Bins() {
+  const { user: currentUser } = useAuthStore()
+  const isLeader = currentUser?.role === 'leader'
   const [bins, setBins]       = useState<Bin[]>([])
   const [blocks, setBlocks]   = useState<Block[]>([])
   const [loading, setLoading] = useState(true)
@@ -122,12 +125,14 @@ export default function Bins() {
             <span style={{ fontSize: 13.5, fontWeight: 600, color: '#5b9bd5' }}>All Bins</span>
             <span style={{ fontSize: 11, color: '#999', fontWeight: 400, marginLeft: 8 }}>{bins.length} records</span>
           </div>
-          <button onClick={openCreate} style={{
-            background: '#4a90d9', color: '#fff', border: 'none',
-            borderRadius: 5, padding: '7px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-          }}>
-            + Add Bin
-          </button>
+          {!isLeader && (
+            <button onClick={openCreate} style={{
+              background: '#4a90d9', color: '#fff', border: 'none',
+              borderRadius: 5, padding: '7px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+            }}>
+              + Add Bin
+            </button>
+          )}
         </div>
 
         <div style={{ overflowX: 'auto' }}>
@@ -172,12 +177,14 @@ export default function Bins() {
                   {fmt(bin.updated_at)}
                 </td>
                 <td style={{ padding: '11px 16px', borderBottom: '1px solid #ededed' }}>
-                  <span style={{ display: 'flex', gap: 12, fontSize: 11.5 }}>
-                    <a onClick={() => openEdit(bin)} style={{ color: '#4a90d9', cursor: 'pointer', fontWeight: 500 }}>Edit</a>
-                    <Popconfirm title="Delete this bin?" onConfirm={() => handleDelete(bin.id)} okText="Yes" cancelText="No">
-                      <a style={{ color: '#d9534f', cursor: 'pointer', fontWeight: 500 }}>Delete</a>
-                    </Popconfirm>
-                  </span>
+                  {!isLeader && (
+                    <span style={{ display: 'flex', gap: 12, fontSize: 11.5 }}>
+                      <a onClick={() => openEdit(bin)} style={{ color: '#4a90d9', cursor: 'pointer', fontWeight: 500 }}>Edit</a>
+                      <Popconfirm title="Delete this bin?" onConfirm={() => handleDelete(bin.id)} okText="Yes" cancelText="No">
+                        <a style={{ color: '#d9534f', cursor: 'pointer', fontWeight: 500 }}>Delete</a>
+                      </Popconfirm>
+                    </span>
+                  )}
                 </td>
               </tr>
             ))}
